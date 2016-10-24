@@ -5,7 +5,6 @@ const defaults = {
   timeout: '2s',
   maxFailures: 5,
   cooldown: '15s',
-  maxCooldown: '60s',
   monitor: () => {}
 };
 

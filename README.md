@@ -26,24 +26,24 @@ npm i disyuntor
 const disyuntor = require('disyuntor');
 
 const dnsSafeLookup = disyuntor(dns.lookup, {
-  //Maximum time that the underlying function can take before is considered faulty.
+  //Timeout for the protected function.
   timeout: '2s',
 
   //The number of consecutive failures before switching to open mode
   //and stop calling the underlying service.
   maxFailures: 5,
 
-  //The minimum time the circuit will be open before doing another attempt.
+  //The minimum time the circuit remains open before doing another attempt.
   cooldown: '15s',
 
-  //The maximum amount of time the circuit will be open before doing a new attempt.
+  //The maximum amount of time the circuit remains open before doing a new attempt.
   maxCooldown: '60s',
 
-  //this is used in error messages.
+  //This is used in error messages.
   name: 'dns.lookup',
 
   //optionally log errors
-  monitor: (err) => logger.panic({ err }, 'Error on dns.lookup')
+  monitor: (details) => logger.panic({ err: details.err, args: details.args }, 'Error on dns.lookup')
 });
 ```
 
