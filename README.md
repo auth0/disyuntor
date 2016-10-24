@@ -47,6 +47,8 @@ const dnsSafeLookup = disyuntor(dns.lookup, {
 });
 ```
 
+Timeouts can be expressed either by strings like '15s' or by milliseconds.
+
 Defaults values are:
 
 - `timeout`: 2s
