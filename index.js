@@ -67,7 +67,7 @@ module.exports = function wrapper (protected, params) {
 
     const timeout = setTimeout(() => {
       timedout = true;
-      catchError(new DisyuntorError(`${config.name}: specified timeout of 10ms was reached`));
+      catchError(new DisyuntorError(`${config.name}: specified timeout of ${config.timeout}ms was reached`));
     }, config.timeout);
 
     function callback(err) {
