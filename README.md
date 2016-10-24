@@ -56,5 +56,5 @@ Defaults values are:
 
 ## License
 
-MIT 2016 - José F. Romaniello
+Copyright (c) 2015 Auth0, Inc. <support@auth0.com> (http://auth0.com)
 
