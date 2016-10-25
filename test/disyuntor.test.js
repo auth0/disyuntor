@@ -174,4 +174,35 @@ describe('disyuntor', function () {
     });
   });
 
+  describe('issue with cooldown(str) and default maxCooldown', function () {
+    var sut;
+    var fail = false;
+
+    beforeEach(function () {
+      fail = false;
+      sut = disyuntor((i, callback) => {
+        if (fail) { return callback(new Error('failure')); }
+        callback(null, i);
+      }, {
+        name: 'test.func',
+        timeout: 10,
+        maxFailures: 1,
+        cooldown: '100ms',
+      });
+    });
+
+    it('should continue open', function (done) {
+      fail = true;
+      async.series([
+        cb => sut(2, () => cb()),
+        cb => {
+          sut(3, (err) => {
+            assert.equal(err.message, 'test.func: the circuit-breaker is open');
+            cb();
+          });
+        },
+      ], done);
+    });
+  });
+
 });

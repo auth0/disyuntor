@@ -20,14 +20,14 @@ function wrapper (protected, params) {
     throw new Error('params.name is required');
   }
 
-  if (typeof config.maxCooldown === 'undefined') {
-    config.maxCooldown = config.cooldown * 3;
-  }
-
   //convert properties to milliseconds.
   timeProps.forEach(p => {
     config[p] = typeof config[p] === 'string' ? ms(config[p]) : config[p];
   });
+
+  if (typeof config.maxCooldown === 'undefined') {
+    config.maxCooldown = config.cooldown * 3;
+  }
 
   var failures = 0;
   var lastFailure = 0;
