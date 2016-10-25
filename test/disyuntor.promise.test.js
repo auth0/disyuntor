@@ -2,6 +2,7 @@ const disyuntor = require('./..');
 const assert    = require('chai').assert;
 const async     = require('async');
 const Promise   = require('bluebird');
+const DisyuntorError = require('../lib/DisyuntorError');
 
 describe('disyuntor (promise)', function () {
 
@@ -50,6 +51,8 @@ describe('disyuntor (promise)', function () {
       sut().catch((err1) => {
         var startTime = Date.now();
         sut().catch(err2 => {
+          assert.instanceOf(err2, Error);
+          assert.instanceOf(err2, DisyuntorError);
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
           assert.closeTo(Date.now() - startTime, 1, 2);
           assert.equal(monitorCalls[0].err, err1);
