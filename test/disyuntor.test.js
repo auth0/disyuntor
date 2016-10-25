@@ -17,9 +17,9 @@ describe('disyuntor', function () {
 
     beforeEach(function () {
       monitorCalls = [];
-      sut = disyuntor(() => {}, {
+      sut = disyuntor(cb => setTimeout(cb, 500), {
         name: 'test.func',
-        timeout: 10,
+        timeout: '10ms',
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,

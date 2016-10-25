@@ -11,6 +11,14 @@ describe('disyuntor (promise)', function () {
     }, /expecting a function returning a promise but got \[object Undefined\]/);
   });
 
+  it('should throw an error if func does not return a promise', function () {
+    disyuntor
+      .promise(() => {}, { name: 'null.fail' })()
+      .catch(err => {
+        assert.equal(err.message, 'expecting function to return a promise but got [object Undefined]');
+      });
+  });
+
   describe('when the protected promise never ends', function () {
     var monitorCalls = [];
     var sut;
