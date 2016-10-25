@@ -12,10 +12,12 @@
     "test": "mocha"
   },
   "dependencies": {
+    "bluebird": "~3.4.6",
     "ms": "~0.7.1"
   },
   "devDependencies": {
     "async": "~2.1.2",
+    "bluebird": "~3.4.6",
     "chai": "~2.3.0",
     "mocha": "~2.2.5"
   }

@@ -11,8 +11,9 @@ const defaults = {
 const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
 
 const states = ['closed', 'open', 'half open'];
+const Promise = require('bluebird');
 
-module.exports = function wrapper (protected, params) {
+function wrapper (protected, params) {
   const config = Object.assign({}, defaults, params);
 
   if (typeof config.name === 'undefined') {
@@ -81,4 +82,39 @@ module.exports = function wrapper (protected, params) {
 
     protected.apply(null, args.concat([callback]));
   };
+}
+
+module.exports = wrapper;
+
+module.exports.promise = function (protectedPromise, params) {
+  if (typeof protectedPromise !== 'function') {
+    throw new Error('expected a function returning a promise as the first argument');
+  }
+
+  const protected = wrapper(function() {
+    const args = Array.from(arguments);
+    const callback = args.pop();
+    const promise = protectedPromise.apply(null, args);
+    promise.then(function () {
+      const resultArgs = [null].concat(Array.from(arguments));
+      callback.apply(null, resultArgs);
+    }, function (err) {
+      callback(err);
+    });
+  }, params);
+
+  return function() {
+    const args = Array.from(arguments);
+
+    return new Promise((resolve, reject) => {
+      const callback = function (err) {
+        if (err) { return reject(err); }
+        const result = Array.from(arguments).slice(1);
+        resolve.apply(null, result);
+      };
+
+      protected.apply(null, args.concat(callback));
+    });
+  };
+
 };

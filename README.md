@@ -45,6 +45,12 @@ const dnsSafeLookup = disyuntor(dns.lookup, {
   //optionally log errors
   monitor: (details) => logger.panic({ err: details.err, args: details.args }, 'Error on dns.lookup')
 });
+
+//then use as you will normally use dns.lookup
+dnsSafeLookup('google.com', (err, ip) => {
+  if (err) { return console.error(err.message); }
+  console.log(ip);
+})
 ```
 
 Timeouts can be expressed either by strings like '15s' or by milliseconds.
@@ -55,6 +61,23 @@ Defaults values are:
 - `maxFailures`: 5
 - `cooldown`: 15s
 - `maxCooldown`: 3 * cooldown
+
+
+## Protecting Promise APIs
+
+```javascript
+const lookup = Promise.promisify(require('dns').lookup);
+
+const protectedLookup = disyuntor.promise(lookup, {
+  name: 'dns.lookup',
+  timeout: '2s',
+  maxFailures: 2
+});
+
+protectedLookup('google.com')
+  .then((ip)  => console.log(ip),
+        (err) => console.error(err));
+```
 
 ## License
 
