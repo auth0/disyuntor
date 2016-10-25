@@ -88,13 +88,18 @@ module.exports = wrapper;
 
 module.exports.promise = function (protectedPromise, params) {
   if (typeof protectedPromise !== 'function') {
-    throw new Error('expected a function returning a promise as the first argument');
+    throw new Error('expecting a function returning a promise but got ' + {}.toString.call(protectedPromise));
   }
 
   const protected = wrapper(function() {
     const args = Array.from(arguments);
     const callback = args.pop();
     const promise = protectedPromise.apply(null, args);
+
+    if (!promise || !promise.then) {
+      throw new Error('expecting function to return a promise but got ' + {}.toString.call(promise));
+    }
+
     promise.then(function () {
       const resultArgs = [null].concat(Array.from(arguments));
       callback.apply(null, resultArgs);

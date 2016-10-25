@@ -4,6 +4,13 @@ const async     = require('async');
 const Promise   = require('bluebird');
 
 describe('disyuntor (promise)', function () {
+
+  it('should throw an error if func is undefined', function () {
+    assert.throw(() => {
+      disyuntor.promise();
+    }, /expecting a function returning a promise but got \[object Undefined\]/);
+  });
+
   describe('when the protected promise never ends', function () {
     var monitorCalls = [];
     var sut;
