@@ -51,7 +51,7 @@ function wrapper (protected, params) {
 
   reset();
 
-  return function () {
+  function protector() {
     const args = Array.from(arguments);
     const originalCallback = args.pop();
     var timedout = false;
@@ -90,7 +90,12 @@ function wrapper (protected, params) {
     }
 
     protected.apply(null, args.concat([callback]));
-  };
+  }
+
+
+  protector.reset = reset;
+
+  return protector;
 }
 
 module.exports = wrapper;
