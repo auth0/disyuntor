@@ -29,9 +29,7 @@ function wrapper (protected, params) {
     config.maxCooldown = config.cooldown * 3;
   }
 
-  var failures = 0;
-  var lastFailure = 0;
-  var currentCooldown = config.cooldown;
+  var failures, lastFailure, currentCooldown;
 
   function getState() {
     if (failures >= config.maxFailures) {
@@ -44,6 +42,14 @@ function wrapper (protected, params) {
       return states[0];
     }
   }
+
+  function reset() {
+    failures = 0;
+    lastFailure = 0;
+    currentCooldown = config.cooldown;
+  }
+
+  reset();
 
   return function () {
     const args = Array.from(arguments);
@@ -61,7 +67,9 @@ function wrapper (protected, params) {
     function catchError(err) {
       failures++;
       lastFailure = Date.now();
-      currentCooldown = Math.min(currentCooldown * failures, config.maxCooldown);
+      if (currentState === states[2]) {
+        currentCooldown = Math.min(currentCooldown * failures, config.maxCooldown);
+      }
       config.monitor({err, args});
       originalCallback(err);
     }
@@ -77,6 +85,7 @@ function wrapper (protected, params) {
       if (err) {
         return catchError(err);
       }
+      reset();
       originalCallback.apply(null, arguments);
     }
 

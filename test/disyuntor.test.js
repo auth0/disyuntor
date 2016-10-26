@@ -205,4 +205,61 @@ describe('disyuntor', function () {
     });
   });
 
+  describe('reseting after cooldown', function () {
+    var sut;
+    var fail = false;
+
+    beforeEach(function () {
+      fail = false;
+      sut = disyuntor((i, callback) => {
+        if (fail) { return callback(new Error('failure')); }
+        callback(null, i);
+      }, {
+        name: 'test.func',
+        timeout: 10,
+        maxFailures: 2,
+        cooldown: '100ms',
+      });
+    });
+
+
+    it('should work', function (done) {
+      fail = true;
+      async.series([
+        //fail twice
+        cb => sut(2, () => cb()),
+        cb => sut(2, () => cb()),
+        //circuit is open
+        cb => {
+          sut(3, (err) => {
+            assert.equal(err.message, 'test.func: the circuit-breaker is open');
+            cb();
+          });
+        },
+        //wait the circuits cooldown
+        cb => setTimeout(cb, 100),
+        //this one works
+        cb => {
+          //reset the breaker
+          fail = false;
+          sut(2, () => cb());
+        },
+        //fail
+        cb => {
+          fail = true;
+          sut(2, () => cb());
+        },
+        //circuit should be still closed because maxFailures is 2.
+        cb => {
+          sut(3, (err) => {
+            assert.equal(err.message, 'failure');
+            cb();
+          });
+        },
+      ], done);
+    });
+
+
+  });
+
 });
