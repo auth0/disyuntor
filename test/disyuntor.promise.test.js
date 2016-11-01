@@ -63,12 +63,12 @@ describe('disyuntor (promise)', function () {
     });
 
     it('should try again after "cooldown" msecs', function (done) {
-      sut().catch(() => {
+      sut().catch((err1) => {
         setTimeout(() => {
           sut().catch((err) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls[1].err, err);
-            assert.equal(monitorCalls[1].args.length, 0);
+            assert.equal(monitorCalls[0].err, err1);
+            assert.equal(monitorCalls[0].args.length, 0);
             done();
           });
         }, 200);

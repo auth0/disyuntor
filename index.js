@@ -67,10 +67,12 @@ function wrapper (protected, params) {
     function catchError(err) {
       failures++;
       lastFailure = Date.now();
+      if (failures === 1) {
+        config.monitor({err, args});
+     }
       if (currentState === states[2]) {
         currentCooldown = Math.min(currentCooldown * failures, config.maxCooldown);
       }
-      config.monitor({err, args});
       originalCallback(err);
     }
 
