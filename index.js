@@ -29,7 +29,7 @@ function wrapper (protected, params) {
     config.maxCooldown = config.cooldown * 3;
   }
 
-  var failures, lastFailure, currentCooldown;
+  var failures, lastFailure, currentCooldown, monitorCalled;
 
   function getState() {
     if (failures >= config.maxFailures) {
@@ -47,6 +47,7 @@ function wrapper (protected, params) {
     failures = 0;
     lastFailure = 0;
     currentCooldown = config.cooldown;
+    monitorCalled = false;
   }
 
   reset();
@@ -61,15 +62,16 @@ function wrapper (protected, params) {
 
     if (currentState === states[1]) {
       const err = new DisyuntorError(`${config.name}: the circuit-breaker is open`);
+      if (!monitorCalled) {
+        monitorCalled = true;
+        config.monitor({err});
+      }
       return setImmediate(originalCallback, err);
     }
 
     function catchError(err) {
       failures++;
       lastFailure = Date.now();
-      if (failures === 1) {
-        config.monitor({err, args});
-     }
       if (currentState === states[2]) {
         currentCooldown = Math.min(currentCooldown * failures, config.maxCooldown);
       }

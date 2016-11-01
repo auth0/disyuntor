@@ -32,32 +32,29 @@ describe('disyuntor', function () {
       sut(err => {
         assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
         assert.closeTo(Date.now() - startTime, 10, 10);
-        assert.equal(monitorCalls[0].err, err);
-        assert.equal(monitorCalls[0].args.length, 0);
+        assert.equal(monitorCalls.length, 0);
         done();
       });
     });
 
     it('should fail immediately after "maxFailures"', function (done) {
-      sut((err1) => {
+      sut(() => {
         var startTime = Date.now();
-        sut(err2 => {
-          assert.match(err2.message, /test\.func: the circuit-breaker is open/);
+        sut(err => {
+          assert.match(err.message, /test\.func: the circuit-breaker is open/);
           assert.closeTo(Date.now() - startTime, 1, 2);
-          assert.equal(monitorCalls[0].err, err1);
-          assert.equal(monitorCalls[0].args.length, 0);
+          assert.equal(monitorCalls[0].err, err);
           done();
         });
       });
     });
 
     it('should try again after "cooldown" msecs', function (done) {
-      sut((err1) => {
+      sut(() => {
         setTimeout(() => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls[0].err, err1);
-            assert.equal(monitorCalls[0].args.length, 0);
+            assert.equal(monitorCalls.length, 0);
             done();
           });
         }, 200);
@@ -73,7 +70,7 @@ describe('disyuntor', function () {
         cb => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 1);
+            assert.equal(monitorCalls.length, 0);
             cb();
           });
         },
@@ -138,11 +135,10 @@ describe('disyuntor', function () {
       fail = true;
       sut(2, err1 => {
         assert.equal(err1.message, 'failure');
-        assert.equal(monitorCalls[0].err, err1);
-        assert.equal(monitorCalls[0].args.length, 1);
-        assert.equal(monitorCalls[0].args[0], 2);
+        assert.equal(monitorCalls.length, 0);
         sut(2, err2 => {
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
+          assert.equal(monitorCalls[0].err, err2);
           done();
         });
       });
