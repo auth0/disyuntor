@@ -11,6 +11,7 @@ const defaults = {
 const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
 
 const states = ['closed', 'open', 'half open'];
+
 const Promise = require('bluebird');
 
 function wrapper (protected, params) {
@@ -69,12 +70,13 @@ function wrapper (protected, params) {
       return setImmediate(originalCallback, err);
     }
 
+    if (currentState === states[2]) {
+      currentCooldown = Math.min(currentCooldown * (failures + 1), config.maxCooldown);
+    }
+
     function catchError(err) {
       failures++;
       lastFailure = Date.now();
-      if (currentState === states[2]) {
-        currentCooldown = Math.min(currentCooldown * failures, config.maxCooldown);
-      }
       originalCallback(err);
     }
 

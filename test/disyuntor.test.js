@@ -61,6 +61,21 @@ describe('disyuntor', function () {
       });
     });
 
+    it('should allow only one attempt on the half-open state', function (done) {
+      sut(() => {
+        setTimeout(() => {
+          async.parallel([
+            done => sut(err => done(null, err)),
+            done => sut(err => done(null, err)),
+          ], (err, errs) => {
+            assert.match(errs[0].message, /test\.func: specified timeout of 10ms was reached/);
+            assert.match(errs[1].message, /test\.func: the circuit-breaker is open/);
+            done();
+          });
+        }, 200);
+      });
+    });
+
     it('should backoff on multiple failures', function (done) {
       async.series([
         cb => sut(() => cb()),

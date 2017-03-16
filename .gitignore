@@ -46,3 +46,5 @@ jspm_packages
 
 # Output of 'npm pack'
 *.tgz
+
+.DS_Store
