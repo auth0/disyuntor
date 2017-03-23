@@ -2,10 +2,11 @@ const ms = require('ms');
 const DisyuntorError = require('./lib/DisyuntorError');
 
 const defaults = {
-  timeout: '2s',
+  timeout:     '2s',
   maxFailures: 5,
-  cooldown: '15s',
-  monitor: () => {}
+  cooldown:    '15s',
+  arity:       'auto',
+  monitor:     () => {}
 };
 
 const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
@@ -54,10 +55,11 @@ function wrapper (protected, params) {
   reset();
 
   function protector() {
-    const args = Array.from(arguments);
-    const originalCallback = args.pop();
-    var timedout = false;
+    const argLength = arguments.length;
+    const args = arguments;
+    const originalCallback = arguments[argLength - 1];
 
+    var timedout = false;
 
     const currentState = getState();
 
@@ -68,9 +70,7 @@ function wrapper (protected, params) {
         config.monitor({err});
       }
       return setImmediate(originalCallback, err);
-    }
-
-    if (currentState === states[2]) {
+    } else if (currentState === states[2]) {
       currentCooldown = Math.min(currentCooldown * (failures + 1), config.maxCooldown);
     }
 
@@ -95,7 +95,9 @@ function wrapper (protected, params) {
       originalCallback.apply(null, arguments);
     }
 
-    protected.apply(null, args.concat([callback]));
+    args[argLength - 1] = callback;
+
+    protected.apply(null, args);
   }
 
 
