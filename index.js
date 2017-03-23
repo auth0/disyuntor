@@ -6,7 +6,8 @@ const defaults = {
   maxFailures: 5,
   cooldown:    '15s',
   arity:       'auto',
-  monitor:     () => {}
+  monitor:     () => {},
+  trigger:     (err) => true
 };
 
 const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
@@ -75,8 +76,10 @@ function wrapper (protected, params) {
     }
 
     function catchError(err) {
-      failures++;
-      lastFailure = Date.now();
+      if (config.trigger(err)) {
+        failures++;
+        lastFailure = Date.now();
+      }
       originalCallback(err);
     }
 
