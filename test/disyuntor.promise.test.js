@@ -4,7 +4,7 @@ const async     = require('async');
 const Promise   = require('bluebird');
 const DisyuntorError = require('../lib/DisyuntorError');
 
-describe('disyuntor (promise)', function () {
+describe('promise interface', function () {
 
   it('should throw an error if func is undefined', function () {
     assert.throw(() => {
@@ -32,30 +32,28 @@ describe('disyuntor (promise)', function () {
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,
-        monitor: details => monitorCalls.push(details)
+        onTrip: (err, failures, cooldown) => monitorCalls.push({err, failures, cooldown})
       });
     });
 
-    it('should fail with timeout', function (done) {
-      var startTime = Date.now();
-      sut().catch(err => {
+    it('should fail with timeout', function () {
+      const startTime = Date.now();
+      return sut().catch(err => {
         assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
         assert.closeTo(Date.now() - startTime, 10, 10);
-        assert.equal(monitorCalls.length, 0);
-        done();
+        assert.equal(monitorCalls.length, 1);
       });
     });
 
-    it('should fail immediately after "maxFailures"', function (done) {
-      sut().catch(() => {
-        var startTime = Date.now();
-        sut().catch(err => {
+    it('should fail immediately after "maxFailures"', function () {
+      return sut().catch((originalError) => {
+        const startTime = Date.now();
+        return sut().catch(err => {
           assert.instanceOf(err, Error);
           assert.instanceOf(err, DisyuntorError);
           assert.match(err.message, /test\.func: the circuit-breaker is open/);
           assert.closeTo(Date.now() - startTime, 1, 2);
-          assert.equal(monitorCalls[0].err, err);
-          done();
+          assert.equal(monitorCalls[0].err, originalError);
         });
       });
     });
@@ -65,7 +63,7 @@ describe('disyuntor (promise)', function () {
         setTimeout(() => {
           sut().catch((err) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 0);
+            assert.equal(monitorCalls.length, 2);
             done();
           });
         }, 200);
@@ -138,7 +136,7 @@ describe('disyuntor (promise)', function () {
         timeout: 10,
         maxFailures: 1,
         cooldown: 200,
-        monitor: details => monitorCalls.push(details)
+        onTrip: (err, failures, cooldown) => monitorCalls.push({ err, failures, cooldown })
       });
     });
 
@@ -146,10 +144,10 @@ describe('disyuntor (promise)', function () {
       fail = true;
       return sut(2).catch(err1 => {
         assert.equal(err1.message, 'failure');
-        assert.equal(monitorCalls.length, 0);
+        assert.equal(monitorCalls.length, 1);
         return sut(2).catch(err2 => {
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
-          assert.equal(monitorCalls[0].err, err2);
+          assert.equal(monitorCalls[0].err, err1);
         });
       });
     });

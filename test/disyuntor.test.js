@@ -2,7 +2,6 @@ const disyuntor = require('./..');
 const assert = require('chai').assert;
 const async = require('async');
 
-
 describe('disyuntor', function () {
 
   it('should fail if name is undefined', function () {
@@ -12,18 +11,18 @@ describe('disyuntor', function () {
   });
 
   describe('when the protected function doesnt call back', function () {
-    var monitorCalls = [];
+    var tripCalls = [];
     var sut;
 
     beforeEach(function () {
-      monitorCalls = [];
+      tripCalls = [];
       sut = disyuntor(cb => setTimeout(cb, 500), {
         name: 'test.func',
         timeout: '10ms',
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,
-        monitor: details => monitorCalls.push(details)
+        onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
       });
     });
 
@@ -32,18 +31,18 @@ describe('disyuntor', function () {
       sut(err => {
         assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
         assert.closeTo(Date.now() - startTime, 10, 10);
-        assert.equal(monitorCalls.length, 0);
+        assert.equal(tripCalls.length, 1);
         done();
       });
     });
 
     it('should fail immediately after "maxFailures"', function (done) {
-      sut(() => {
+      sut((originalError) => {
         var startTime = Date.now();
         sut(err => {
           assert.match(err.message, /test\.func: the circuit-breaker is open/);
           assert.closeTo(Date.now() - startTime, 1, 2);
-          assert.equal(monitorCalls[0].err, err);
+          assert.equal(tripCalls[0].err, originalError);
           done();
         });
       });
@@ -54,7 +53,7 @@ describe('disyuntor', function () {
         setTimeout(() => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 0);
+            assert.equal(tripCalls.length, 2);
             done();
           });
         }, 200);
@@ -85,7 +84,7 @@ describe('disyuntor', function () {
         cb => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 0);
+            assert.equal(tripCalls.length, 2);
             cb();
           });
         },
@@ -95,7 +94,7 @@ describe('disyuntor', function () {
         cb => {
           sut(err => {
             assert.match(err.message, /test\.func: the circuit-breaker is open/);
-            assert.equal(monitorCalls.length, 1);
+            assert.equal(tripCalls.length, 2);
             cb();
           });
         },
@@ -104,7 +103,7 @@ describe('disyuntor', function () {
         cb => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 1);
+            assert.equal(tripCalls.length, 3);
             cb();
           });
         },
@@ -114,7 +113,7 @@ describe('disyuntor', function () {
         cb => {
           sut(err => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(monitorCalls.length, 1);
+            assert.equal(tripCalls.length, 4);
             cb();
           });
         },
@@ -127,12 +126,12 @@ describe('disyuntor', function () {
 
 
   describe('when the protected function fails', function () {
-    var monitorCalls = [];
+    var tripCalls = [];
     var sut;
     var fail = false;
 
     beforeEach(function () {
-      monitorCalls = [];
+      tripCalls = [];
       fail = false;
       sut = disyuntor((i, callback) => {
         if (fail) { return callback(new Error('failure')); }
@@ -142,7 +141,7 @@ describe('disyuntor', function () {
         timeout: 10,
         maxFailures: 1,
         cooldown: 200,
-        monitor: details => monitorCalls.push(details)
+        onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
       });
     });
 
@@ -150,10 +149,10 @@ describe('disyuntor', function () {
       fail = true;
       sut(2, err1 => {
         assert.equal(err1.message, 'failure');
-        assert.equal(monitorCalls.length, 0);
+        assert.equal(tripCalls.length, 1);
         sut(2, err2 => {
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
-          assert.equal(monitorCalls[0].err, err2);
+          assert.equal(tripCalls[0].err, err1);
           done();
         });
       });

@@ -6,8 +6,8 @@ const defaults = {
   maxFailures: 5,
   cooldown:    '15s',
   arity:       'auto',
-  monitor:     () => {},
-  trigger:     (err) => true
+  onTrip:      () => {},
+  trigger:     () => true
 };
 
 const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
@@ -32,7 +32,7 @@ function wrapper (protected, params) {
     config.maxCooldown = config.cooldown * 3;
   }
 
-  var failures, lastFailure, currentCooldown, monitorCalled;
+  var failures, lastFailure, currentCooldown;
 
   function getState() {
     if (failures >= config.maxFailures) {
@@ -50,7 +50,6 @@ function wrapper (protected, params) {
     failures = 0;
     lastFailure = 0;
     currentCooldown = config.cooldown;
-    monitorCalled = false;
   }
 
   reset();
@@ -66,10 +65,6 @@ function wrapper (protected, params) {
 
     if (currentState === states[1]) {
       const err = new DisyuntorError(`${config.name}: the circuit-breaker is open`);
-      if (!monitorCalled) {
-        monitorCalled = true;
-        config.monitor({err});
-      }
       return setImmediate(originalCallback, err);
     } else if (currentState === states[2]) {
       currentCooldown = Math.min(currentCooldown * (failures + 1), config.maxCooldown);
@@ -79,6 +74,9 @@ function wrapper (protected, params) {
       if (config.trigger(err)) {
         failures++;
         lastFailure = Date.now();
+        if (failures >= config.maxFailures) {
+          config.onTrip(err, failures, currentCooldown);
+        }
       }
       originalCallback(err);
     }
