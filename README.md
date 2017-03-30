@@ -43,7 +43,7 @@ const dnsSafeLookup = disyuntor(dns.lookup, {
   name: 'dns.lookup',
 
   //optionally log errors
-  onTrip: (err, failures, cooldown) => console.log(`dns.lookup triped ${failures} times because ${err.message}! There will be no more attempts for ${cooldown}ms.`)
+  onTrip: (err, failures, cooldown) => console.log(`dns.lookup triped because it failed ${failures} times. Last error was ${err.message}! There will be no more attempts for ${cooldown}ms.`)
 });
 
 //then use as you will normally use dns.lookup
