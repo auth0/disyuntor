@@ -1,5 +1,6 @@
 const ms = require('ms');
 const DisyuntorError = require('./lib/DisyuntorError');
+const fargs = require('very-fast-args');
 
 const defaults = {
   timeout:     '2s',
@@ -55,16 +56,16 @@ function wrapper (protected, params) {
   reset();
 
   function protector() {
-    const argLength = arguments.length;
-    const args = arguments;
-    const originalCallback = arguments[argLength - 1];
+    const args =  fargs.apply(null, arguments);
+
+    const originalCallback = args[args.length - 1];
 
     var timedout = false;
 
     const currentState = getState();
 
     if (currentState === states[1]) {
-      const err = new DisyuntorError(`${config.name}: the circuit-breaker is open`);
+      const err = new DisyuntorError(config.name + ': the circuit-breaker is open');
       return setImmediate(originalCallback, err);
     } else if (currentState === states[2]) {
       currentCooldown = Math.min(currentCooldown * (failures + 1), config.maxCooldown);
@@ -96,7 +97,7 @@ function wrapper (protected, params) {
       originalCallback.apply(null, arguments);
     }
 
-    args[argLength - 1] = callback;
+    args[args.length - 1] = callback;
 
     protected.apply(null, args);
   }
