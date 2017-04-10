@@ -110,6 +110,8 @@ function wrapper (protected, params) {
 
 module.exports = wrapper;
 
+module.exports.DisyuntorError = DisyuntorError;
+
 module.exports.promise = function (protectedPromise, params) {
   if (typeof protectedPromise !== 'function') {
     throw new Error('expecting a function returning a promise but got ' + {}.toString.call(protectedPromise));
