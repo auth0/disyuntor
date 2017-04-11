@@ -65,7 +65,7 @@ function wrapper (protected, params) {
     const currentState = getState();
 
     if (currentState === states[1]) {
-      const err = new DisyuntorError(config.name + ': the circuit-breaker is open');
+      const err = new DisyuntorError(config.name + ': the circuit-breaker is open', 'open');
       return setImmediate(originalCallback, err);
     } else if (currentState === states[2]) {
       currentCooldown = Math.min(currentCooldown * (failures + 1), config.maxCooldown);
@@ -84,7 +84,7 @@ function wrapper (protected, params) {
 
     const timeout = setTimeout(() => {
       timedout = true;
-      catchError(new DisyuntorError(`${config.name}: specified timeout of ${config.timeout}ms was reached`));
+      catchError(new DisyuntorError(`${config.name}: specified timeout of ${config.timeout}ms was reached`, 'timeout'));
     }, config.timeout);
 
     function callback(err) {
