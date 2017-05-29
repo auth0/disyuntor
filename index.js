@@ -1,26 +1,23 @@
-const ms = require('ms');
-const DisyuntorError = require('./lib/DisyuntorError');
-const fargs = require('very-fast-args');
+const ms              = require('ms');
+const Promise         = require('bluebird');
+const fargs           = require('very-fast-args');
+
+const DisyuntorError  = require('./lib/DisyuntorError');
+const timeProps       = ['timeout', 'cooldown', 'maxCooldown'];
+const states          = ['closed', 'open', 'half open'];
 
 const defaults = {
   timeout:     '2s',
   maxFailures: 5,
   cooldown:    '15s',
-  arity:       'auto',
   onTrip:      () => {},
   trigger:     () => true
 };
 
-const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
-
-const states = ['closed', 'open', 'half open'];
-
-const Promise = require('bluebird');
-
 function wrapper (protected, params) {
   const config = Object.assign({}, defaults, params);
 
-  if (typeof config.name === 'undefined') {
+  if (!config.name) {
     throw new Error('params.name is required');
   }
 
@@ -29,7 +26,7 @@ function wrapper (protected, params) {
     config[p] = typeof config[p] === 'string' ? ms(config[p]) : config[p];
   });
 
-  if (typeof config.maxCooldown === 'undefined') {
+  if (!config.maxCooldown) {
     config.maxCooldown = config.cooldown * 3;
   }
 
@@ -60,7 +57,7 @@ function wrapper (protected, params) {
 
     const originalCallback = args[args.length - 1];
 
-    var timedout = false;
+    let timedOut = false;
 
     const currentState = getState();
 
@@ -83,12 +80,12 @@ function wrapper (protected, params) {
     }
 
     const timeout = setTimeout(() => {
-      timedout = true;
+      timedOut = true;
       catchError(new DisyuntorError(`${config.name}: specified timeout of ${config.timeout}ms was reached`, 'timeout'));
     }, config.timeout);
 
     function callback(err) {
-      if (timedout) { return; }
+      if (timedOut) { return; }
       clearTimeout(timeout);
       if (err) {
         return catchError(err);
