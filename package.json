@@ -4,7 +4,7 @@
   "version": "2.2.0",
   "author": "José F. Romaniello <jfromaniello@gmail.com> (http://joseoncode.com)",
   "repository": {
-    "url": "git://github.com/jfromaniello/fusible.git"
+    "url": "git://github.com/jfromaniello/disyuntor.git"
   },
   "license": "MIT",
   "main": "index.js",

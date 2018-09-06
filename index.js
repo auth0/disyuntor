@@ -6,7 +6,6 @@ const defaults = {
   timeout:     '2s',
   maxFailures: 5,
   cooldown:    '15s',
-  arity:       'auto',
   onTrip:      () => {},
   trigger:     () => true
 };
@@ -17,7 +16,21 @@ const states = ['closed', 'open', 'half open'];
 
 const Promise = require('bluebird');
 
+/**
+ *
+ * @param {Function} protected The function you want to protect.
+ * @param {Object} params
+ * @param {Number|String} params.name The name of the function or resource used in error messages.
+ * @param {Number|String} [params.timeout="2s"] Timeout for the protected functions in milliseconds or ms timespan format.
+ * @param {Number} [params.maxFailures=5] The number of consecutive failures before switching to open mode and stop
+ * calling the underlying service.
+ * @param {Number|String} [params.cooldown='15s'] The minimum time the circuit remains open before doing a new attempt.
+ * @param {Number|String} [params.cooldown='60s'] The maximum time the circuit remains open before doing a new attempt.
+ * @param {Function} [params.onTrip] Optional callback run each time the circuit trips.
+ * @param {Function} [params.trigger] Optional callback to verify if error should trigger the circuit breaker.
+ */
 function wrapper (protected, params) {
+  wrapper(wrapper, { maxfa})
   const config = Object.assign({}, defaults, params);
 
   if (typeof config.name === 'undefined') {
@@ -112,6 +125,19 @@ module.exports = wrapper;
 
 module.exports.DisyuntorError = DisyuntorError;
 
+/**
+ *
+ * @param {Function} protectedPromise A function that generates a promise.
+ * @param {Object} params
+ * @param {Number|String} params.name The name of the function or resource used in error messages.
+ * @param {Number|String} [params.timeout="2s"] Timeout for the protected functions in milliseconds or ms timespan format.
+ * @param {Number} [params.maxFailures=5] The number of consecutive failures before switching to open mode and stop
+ * calling the underlying service.
+ * @param {Number|String} [params.cooldown='15s'] The minimum time the circuit remains open before doing a new attempt.
+ * @param {Number|String} [params.cooldown='60s'] The maximum time the circuit remains open before doing a new attempt.
+ * @param {Function} [params.onTrip] Optional callback run each time the circuit trips.
+ * @param {Function} [params.trigger] Optional callback to verify if error should trigger the circuit breaker.
+ */
 module.exports.promise = function (protectedPromise, params) {
   if (typeof protectedPromise !== 'function') {
     throw new Error('expecting a function returning a promise but got ' + {}.toString.call(protectedPromise));
