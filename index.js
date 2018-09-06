@@ -30,7 +30,6 @@ const Promise = require('bluebird');
  * @param {Function} [params.trigger] Optional callback to verify if error should trigger the circuit breaker.
  */
 function wrapper (protected, params) {
-  wrapper(wrapper, { maxfa})
   const config = Object.assign({}, defaults, params);
 
   if (typeof config.name === 'undefined') {
