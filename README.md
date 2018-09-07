@@ -78,11 +78,11 @@ Defaults values are:
 ```javascript
 const lookup = Promise.promisify(require('dns').lookup);
 
-const protectedLookup = disyuntor.wrapPromiseApi(lookup, {
+const protectedLookup = disyuntor.wrapPromiseApi({
   name: 'dns.lookup',
   timeout: '2s',
   maxFailures: 2
-});
+}, lookup);
 
 protectedLookup('google.com')
   .then((ip)  => console.log(ip),
