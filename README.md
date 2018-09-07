@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/auth0/disyuntor.svg?branch=master)](https://travis-ci.org/auth0/disyuntor)
+
 A [circuit-breaker](http://martinfowler.com/bliki/CircuitBreaker.html) implementation for node.js with exponential backoff.
 
 **Disyuntor** is the Spanish word used for circuit-breaker.
@@ -99,7 +101,6 @@ const disyuntor = new Disyuntor({
   timeout: '2s',
   maxFailures: 2
 });
-
 
 await disyuntor.protect(() => dns.lookupAsync('google.com'));
 ```

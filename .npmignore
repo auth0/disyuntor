@@ -50,5 +50,7 @@ jspm_packages
 .DS_Store
 
 src/*
-
+.vsvode/*
+.travis.yml
 tsconfig.json
+

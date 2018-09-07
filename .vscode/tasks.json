@@ -5,7 +5,7 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "build",
+      "script": "prepublish",
       "identifier": "build",
       "group": {
         "kind": "build",
