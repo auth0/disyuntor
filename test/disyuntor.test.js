@@ -1,4 +1,4 @@
-const disyuntor = require('./..');
+const disyuntor = require('../lib/Disyuntor').wrapCallbackApi;
 const assert = require('chai').assert;
 const async = require('async');
 
@@ -6,7 +6,7 @@ describe('disyuntor', function () {
 
   it('should fail if name is undefined', function () {
     assert.throws(() => {
-      disyuntor(() => {}, {});
+      disyuntor({}, () => {});
     }, /params\.name is required/);
   });
 
@@ -16,13 +16,15 @@ describe('disyuntor', function () {
 
     beforeEach(function () {
       tripCalls = [];
-      sut = disyuntor(cb => setTimeout(cb, 500), {
+      sut = disyuntor({
         name: 'test.func',
         timeout: '10ms',
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,
         onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
+      }, function(cb) {
+        setTimeout(cb, 500)
       });
     });
 
@@ -133,15 +135,15 @@ describe('disyuntor', function () {
     beforeEach(function () {
       tripCalls = [];
       fail = false;
-      sut = disyuntor((i, callback) => {
-        if (fail) { return callback(new Error('failure')); }
-        callback(null, i);
-      }, {
+      sut = disyuntor({
         name: 'test.func',
         timeout: 10,
         maxFailures: 1,
         cooldown: 200,
         onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
+      }, (i, callback) => {
+        if (fail) { return callback(new Error('failure')); }
+        callback(null, i);
       });
     });
 
@@ -194,14 +196,14 @@ describe('disyuntor', function () {
 
     beforeEach(function () {
       fail = false;
-      sut = disyuntor((i, callback) => {
-        if (fail) { return callback(new Error('failure')); }
-        callback(null, i);
-      }, {
+      sut = disyuntor({
         name: 'test.func',
         timeout: 10,
         maxFailures: 1,
         cooldown: '100ms',
+      }, (i, callback) => {
+        if (fail) { return callback(new Error('failure')); }
+        callback(null, i);
       });
     });
 
@@ -225,14 +227,14 @@ describe('disyuntor', function () {
 
     beforeEach(function () {
       fail = false;
-      sut = disyuntor((i, callback) => {
-        if (fail) { return callback(new Error('failure')); }
-        callback(null, i);
-      }, {
+      sut = disyuntor({
         name: 'test.func',
         timeout: 10,
         maxFailures: 2,
         cooldown: '100ms',
+      }, (i, callback) => {
+        if (fail) { return callback(new Error('failure')); }
+        callback(null, i);
       });
     });
 

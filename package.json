@@ -7,20 +7,24 @@
     "url": "git://github.com/jfromaniello/disyuntor.git"
   },
   "license": "MIT",
-  "main": "index.js",
+  "main": "./lib/Disyuntor.js",
   "scripts": {
-    "test": "./node_modules/.bin/istanbul cover _mocha"
+    "build": "tsc",
+    "test": "npm run build && ./node_modules/.bin/istanbul cover _mocha"
   },
   "dependencies": {
-    "bluebird": "~3.4.6",
-    "ms": "~0.7.1",
-    "very-fast-args": "^1.0.0"
+    "ms": "~0.7.1"
   },
   "devDependencies": {
+    "@types/bluebird": "^3.5.24",
+    "@types/ms": "^0.7.30",
+    "@types/node": "^10.9.4",
     "async": "~2.1.2",
-    "bluebird": "~3.4.6",
+    "bluebird": "^3.4.7",
     "chai": "~2.3.0",
     "istanbul": "~0.4.5",
-    "mocha": "~2.2.5"
+    "mocha": "^5.2.0",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.0.3"
   }
 }

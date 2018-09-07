@@ -20,36 +20,39 @@ A call is considered to have failed if the callback is not called before the `ti
 npm i disyuntor
 ```
 
-## Usage
+## Basic usage
 
 ```javascript
 const disyuntor = require('disyuntor');
 
-const dnsSafeLookup = disyuntor(dns.lookup, {
-  //Timeout for the protected function.
-  timeout: '2s',
-
-  //The number of consecutive failures before switching to open mode
-  //and stop calling the underlying service.
-  maxFailures: 5,
-
-  //The minimum time the circuit remains open before doing another attempt.
-  cooldown: '15s',
-
-  //The maximum amount of time the circuit remains open before doing a new attempt.
-  maxCooldown: '60s',
-
+const dnsSafeLookup = disyuntor.wrapCallbackApi({
   //This is used in error messages.
   name: 'dns.lookup',
 
-  //optionally log errors
-  onTrip: (err, failures, cooldown) => console.log(`dns.lookup triped because it failed ${failures} times. Last error was ${err.message}! There will be no more attempts for ${cooldown}ms.`),
+  //Timeout for the protected function.
+  // timeout: '2s',
 
-  //optional callback to prevent some errors to trigger the disyuntor logic
-  //in this case ENOTFOUND is passed to the callback and will
-  //not trigger the breaker
-  trigger: (err) => err.code !== 'ENOTFOUND'
-});
+  //The number of consecutive failures before switching to open mode
+  //and stop calling the underlying service.
+  // maxFailures: 5,
+
+  //The minimum time the circuit remains open before doing another attempt.
+  // cooldown: '15s',
+
+  //The maximum amount of time the circuit remains open before doing a new attempt.
+  // maxCooldown: '60s',
+
+  //optionally log errors
+  onTrip: (err, failures, cooldown) => {
+    console.log(`dns.lookup triped because it failed ${failures} times.
+Last error was ${err.message}! There will be no more attempts for ${cooldown}ms.`);
+  },
+
+  // //optional callback to prevent some errors to trigger the disyuntor logic
+  // //in this case ENOTFOUND is passed to the callback and will
+  // //not trigger the breaker eg:
+  // trigger: (err) => err.code !== 'ENOTFOUND'
+}, dns.lookup);
 
 //then use as you will normally use dns.lookup
 dnsSafeLookup('google.com', (err, ip) => {
@@ -65,7 +68,7 @@ Defaults values are:
 - `timeout`: 2s
 - `maxFailures`: 5
 - `cooldown`: 15s
-- `maxCooldown`: 3 * cooldown
+- `maxCooldown`: 60s
 
 
 ## Protecting Promise APIs
@@ -73,7 +76,7 @@ Defaults values are:
 ```javascript
 const lookup = Promise.promisify(require('dns').lookup);
 
-const protectedLookup = disyuntor.promise(lookup, {
+const protectedLookup = disyuntor.wrapPromiseApi(lookup, {
   name: 'dns.lookup',
   timeout: '2s',
   maxFailures: 2
@@ -84,6 +87,24 @@ protectedLookup('google.com')
         (err) => console.error(err));
 ```
 
+## Complex scenarios
+
+You can create an instance of Disyuntor to have more control as follows:
+
+```javascript
+const Disyuntor = require('disyuntor').Disyuntor;
+
+const disyuntor = new Disyuntor({
+  name: 'dns.lookup',
+  timeout: '2s',
+  maxFailures: 2
+});
+
+
+await disyuntor.protect(() => dns.lookupAsync('google.com'));
+```
+
+Note: this api only supports promise-returning functions.
 ## License
 
 Copyright (c) 2015 Auth0, Inc. <support@auth0.com> (http://auth0.com)

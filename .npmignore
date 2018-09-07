@@ -49,4 +49,4 @@ jspm_packages
 
 .DS_Store
 
-lib/*
+src/*

@@ -1,25 +1,15 @@
-/**
- * Wraps an asynchronous function with disyuntor.
- * @param protected The function we want to protect.
- * @param params The parameters for the circuit-breaker.
- */
-declare function wrap<T>(
-  protected: T,
-  params: wrap.Parameters
-): T;
-
-declare namespace wrap {
+export namespace Options {
   export interface Parameters {
     /**
      * The name of the function or resource used in error messages.
      */
-    name: string,
+    name: string;
 
     /**
      * Timeout for the protected functions in milliseconds or ms timespan format.
      * Defaults to "2s".
      */
-    timeout?: number|string;
+    timeout?: number | string;
 
     /**
      * The number of consecutive failures before switching to open mode and stop
@@ -32,13 +22,13 @@ declare namespace wrap {
      * The minimum time the circuit remains open before doing a new attempt.
      * Defaults to 15s
      */
-    cooldown?: number|string;
+    cooldown?: number | string;
 
     /**
      * The maximum time the circuit remains open before doing a new attempt.
      * Defaults to 60s
      */
-    maxCooldown?: number|string;
+    maxCooldown?: number | string;
 
     /**
      * Callback executed every time the circuit-breaker trips.
@@ -54,21 +44,7 @@ declare namespace wrap {
      * @returns {Boolean} false if we want to skip the error
      */
     trigger?(err: Error): boolean;
+
+    [key: string]: string | Function | number;
   }
-
-  type PromiseCreator<T> = (...args: any[]) => Promise<T>;
-
-  /**
-   * Wraps a promise-creation function with circuit-breaker logic.
-   * @param create The promise-creation function we want to protect.
-   * @param params The parameters for the circuit-breaker.
-   */
-  export function promise<A, T extends PromiseCreator<A>>(
-    create: T,
-    params: Parameters
-  ): T;
 }
-
-
-
-export default wrap;

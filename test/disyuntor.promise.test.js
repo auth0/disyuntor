@@ -1,22 +1,24 @@
-const disyuntor = require('./..');
+const { wrapPromise, DisyuntorError } = require('../lib/Disyuntor');
+const disyuntor = wrapPromise;
 const assert    = require('chai').assert;
 const async     = require('async');
 const Promise   = require('bluebird');
-const DisyuntorError = require('../lib/DisyuntorError');
 
 describe('promise interface', function () {
 
   it('should throw an error if func is undefined', function () {
-    assert.throw(() => {
-      disyuntor.promise();
-    }, /expecting a function returning a promise but got \[object Undefined\]/);
+    try {
+      disyuntor();
+    } catch(err) {
+      assert.match(err.message,
+          /expecting a function returning a promise but got \[object Undefined\]/);
+    }
   });
 
   it('should throw an error if func does not return a promise', function () {
-    disyuntor
-      .promise(() => {}, { name: 'null.fail' })()
+    return disyuntor({ name: 'null.fail' }, () => {})()
       .catch(err => {
-        assert.equal(err.message, 'expecting function to return a promise but got [object Undefined]');
+        assert.equal(err.message, 'expecting a promise but got [object Undefined]');
       });
   });
 
@@ -26,14 +28,14 @@ describe('promise interface', function () {
 
     beforeEach(function () {
       monitorCalls = [];
-      sut = disyuntor.promise(() => new Promise(() => {}), {
+      sut = disyuntor({
         name: 'test.func',
         timeout: 10,
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,
         onTrip: (err, failures, cooldown) => monitorCalls.push({err, failures, cooldown})
-      });
+      }, () => new Promise(() => {}));
     });
 
     it('should fail with timeout', function () {
@@ -124,19 +126,19 @@ describe('promise interface', function () {
     beforeEach(function () {
       monitorCalls = [];
       fail = false;
-      sut = disyuntor.promise((i) => {
+      sut = disyuntor({
+        name: 'test.func',
+        timeout: 10,
+        maxFailures: 1,
+        cooldown: 200,
+        onTrip: (err, failures, cooldown) => monitorCalls.push({ err, failures, cooldown })
+      }, (i) => {
         return new Promise((resolve, reject) => {
           if (fail) {
             return reject(new Error('failure'));
           }
           resolve(i);
         });
-      }, {
-        name: 'test.func',
-        timeout: 10,
-        maxFailures: 1,
-        cooldown: 200,
-        onTrip: (err, failures, cooldown) => monitorCalls.push({ err, failures, cooldown })
       });
     });
 
