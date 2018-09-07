@@ -148,4 +148,4 @@ export function wrapPromise<A, T extends PromiseBuilder<A>>(
   }
 }
 
-export { DisyuntorError };
+export { DisyuntorError, Options };
