@@ -25,12 +25,17 @@ class CancellablePromise<T> extends Promise<T> {
   }
 }
 
-export function create<T>(name: string, milliseconds: number) : CancellablePromise<T> {
-  return new CancellablePromise((_resolve, reject, onCancel) => {
+export function create<T>(name: string, milliseconds: number, mainOp: Promise<any>) : Promise<T> {
+  var timeoutProm = new CancellablePromise<T>((_resolve, reject, onCancel) => {
     const timeout = setTimeout(() => {
       reject(new TimeoutError(name, milliseconds));
     }, milliseconds);
-
     onCancel(() => clearTimeout(timeout));
   });
+
+  mainOp
+    .then(() => timeoutProm.cancel())
+    .catch(() => timeoutProm.cancel());
+
+  return timeoutProm;
 }

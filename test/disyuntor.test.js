@@ -126,6 +126,28 @@ describe('disyuntor', function () {
   });
 
 
+  describe('when timeout is disabled', function () {
+    var tripCalls = [];
+    var sut;
+
+    beforeEach(function () {
+      tripCalls = [];
+      sut = disyuntor({
+        name: 'test.func',
+        timeout: false,
+        maxFailures: 1,
+        cooldown: 200,
+        maxCooldown: 400,
+        onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
+      }, function(cb) {
+        setTimeout(cb, 500)
+      });
+    });
+
+    it('should not fail with timeout', function (done) {
+      sut(err => done(err));
+    });
+  });
 
   describe('when the protected function fails', function () {
     var tripCalls = [];

@@ -9,7 +9,7 @@ export namespace Options {
      * Timeout for the protected functions in milliseconds or ms timespan format.
      * Defaults to "2s".
      */
-    timeout?: number | string;
+    timeout?: number | string | boolean;
 
     /**
      * The number of consecutive failures before switching to open mode and stop
@@ -45,6 +45,6 @@ export namespace Options {
      */
     trigger?(err: Error): boolean;
 
-    [key: string]: string | Function | number;
+    [key: string]: string | Function | number | boolean;
   }
 }

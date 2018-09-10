@@ -4,6 +4,7 @@ import ms from 'ms'
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
+import { getHeapStatistics } from 'v8';
 
 const defaults = {
   timeout:     '2s',
@@ -32,8 +33,13 @@ export class Disyuntor extends EventEmitter {
   constructor(params: Options.Parameters){
     super()
     this.params = Object.assign({}, defaults, params);
+
     if (typeof this.params.name === 'undefined') {
       throw new Error('params.name is required');
+    }
+
+    if (this.params.timeout === true) {
+      throw new Error('invalid timeout parameter. It should be either a timespan or false.');
     }
 
     timeProps.forEach(k => {
@@ -75,13 +81,21 @@ export class Disyuntor extends EventEmitter {
       this.currentCooldown = Math.min(this.currentCooldown * (this.failures + 1), <number>this.params.maxCooldown);
     }
 
-    const timeout = createTimeout<A>(
-        this.params.name,
-        <number>this.params.timeout);
+
 
     try {
-      const prom = Promise.race([ timeout, call() ]);
-      return await prom;
+      const promise = call();
+
+      if (this.params.timeout === false) {
+        return await promise;
+      }
+
+      const timeout = createTimeout<A>(
+        this.params.name,
+        <number>this.params.timeout,
+        promise);
+
+      return await Promise.race([ timeout,  promise ]);
     } catch(err) {
       if (this.params.trigger(err)) {
         this.failures++;
@@ -95,8 +109,6 @@ export class Disyuntor extends EventEmitter {
         }
       }
       throw err;
-    } finally {
-      timeout.cancel();
     }
   }
 }
