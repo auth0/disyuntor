@@ -30,7 +30,7 @@ export class Disyuntor extends EventEmitter {
   lastFailure: number = 0;
   currentCooldown?: number;
 
-  private get timeout(): number {
+  public get timeout(): number {
     //this is already parsed
     return <number>this.params.timeout;
   }
