@@ -30,6 +30,11 @@ export class Disyuntor extends EventEmitter {
   lastFailure: number = 0;
   currentCooldown?: number;
 
+  private get timeout(): number {
+    //this is already parsed
+    return <number>this.params.timeout;
+  }
+
   constructor(params: Options.Parameters){
     super()
     this.params = Object.assign({}, defaults, params);
@@ -80,8 +85,6 @@ export class Disyuntor extends EventEmitter {
     } else if (this.state === State.HalfOpen) {
       this.currentCooldown = Math.min(this.currentCooldown * (this.failures + 1), <number>this.params.maxCooldown);
     }
-
-
 
     try {
       const promise = call();
