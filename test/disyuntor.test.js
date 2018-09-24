@@ -296,8 +296,51 @@ describe('disyuntor', function () {
         },
       ], done);
     });
-
-
   });
 
+  describe('should throttle', function() {
+    var sut;
+    beforeEach(function () {
+      sut = disyuntor({
+        name: 'test.func',
+        timeout: 10,
+        maxFailures: 1,
+        cooldown: '10ms',
+        action: 'throttle',
+        throttlePercent: 50
+      }, (callback) => {
+        callback(new Error('failure'));
+      });
+    });
+
+    it('should allow requests through and fail others', function(done) {
+      var open = false;
+      var passthrough = false;
+      sut(() => {
+        async.parallel([
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err)),
+          done => sut(err => done(null, err))
+        ], (err, errs) => {
+          errs.forEach((err) => {
+            if (err.message.indexOf('open') > -1) {
+              open = true;
+            }
+            if (err.message === 'failure') {
+              passthrough = true;
+            }
+          });
+          assert.equal(open, true, 'There should be results with circuit open');
+          assert.equal(passthrough, true, 'There should be results with the regular failure');
+          done();
+        });
+      });
+    });
+  });
 });
