@@ -10,6 +10,8 @@ const defaults = {
   timeout:     '2s',
   maxFailures: 5,
   cooldown:    '15s',
+  action:      'fail',
+  throttlePercent: 50,
   trigger:     () => true
 };
 
@@ -80,8 +82,17 @@ export class Disyuntor extends EventEmitter {
   }
 
   async protect<A, T extends PromiseBuilder<A>>(call: T): Promise<A> {
-    if(this.state === State.Open) {
-      throw new DisyuntorError(`${this.params.name}: the circuit-breaker is open`, this.state);
+    if (this.state === State.Open) {
+      let shouldThrow;
+      if (this.params.action === 'fail') {
+        shouldThrow = true;
+      } else if (this.params.action === 'throttle') {
+        shouldThrow = Math.random() * 100 < this.params.throttlePercent;
+      }
+
+      if (shouldThrow) {
+        throw new DisyuntorError(`${this.params.name}: the circuit-breaker is open`, this.state);
+      }
     } else if (this.state === State.HalfOpen) {
       this.currentCooldown = Math.min(this.currentCooldown * (this.failures + 1), <number>this.params.maxCooldown);
     }
