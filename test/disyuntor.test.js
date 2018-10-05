@@ -381,14 +381,14 @@ describe('disyuntor', function () {
         throw new Error('error 1');
       }).catch(() => {
         //works
-        return disyuntor.protect(async () => 1);
+        return disyuntor.protect(() => Promise.resolve(1));
       }).then(() => {
         //fail
         return disyuntor.protect(() => {
           throw new Error('error 1');
         });
       }).catch(() => {
-        disyuntor.protect(async () => 1);
+        disyuntor.protect(() => Promise.resolve(1));
       });
 
     });
