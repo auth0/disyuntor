@@ -370,30 +370,27 @@ describe('disyuntor', function () {
   });
 
   describe('intermitent failures', function() {
-    it('should count failures in a row', async function() {
+    it('should count failures in a row', function() {
       const disyuntor = new Disyuntor({
         name: 'disyuntor test',
         maxFailures: 2,
       });
 
       //fail
-      try {
-        await disyuntor.protect(() => {
+      return disyuntor.protect(() => {
+        throw new Error('error 1');
+      }).catch(() => {
+        //works
+        return disyuntor.protect(async () => 1);
+      }).then(() => {
+        //fail
+        return disyuntor.protect(() => {
           throw new Error('error 1');
-        })
-      } catch(err){}
+        });
+      }).catch(() => {
+        disyuntor.protect(async () => 1);
+      });
 
-      //works
-      await disyuntor.protect(async () => 1);
-
-      //fails
-      try {
-        await disyuntor.protect(() => {
-          throw new Error('error 1');
-        })
-      } catch(err){}
-
-      await disyuntor.protect(async () => 1);
     });
   });
 });
