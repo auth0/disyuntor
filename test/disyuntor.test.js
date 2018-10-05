@@ -77,6 +77,74 @@ describe('disyuntor', function () {
       });
     });
 
+    it('should close the circuit after success on half-open state', function (done) {
+      let error = new Error();
+
+      protectedFunction = disyuntor({
+        name: 'test.func',
+        timeout: '10ms',
+        maxFailures: 2,
+        cooldown: 200,
+        maxCooldown: 400,
+        onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
+      }, function(cb) {
+        if (error) {
+          return cb(error);
+        }
+
+        return cb(null, { succeed: true });
+      });
+
+      async.series([
+        // Open the circuit
+        cb => {
+          error = new Error('error-1');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+        cb => {
+          error = new Error('error-2');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+        cb => {
+          error = new Error('error-3');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+
+        // Wait cooldown
+        cb => setTimeout(cb, 250),
+
+        // This should move state from half open to closed
+        cb => {
+          error = null;
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+
+        // Fail again, this should not open the circuit because failures should
+        // have reset
+        cb => {
+          error = new Error('error-4');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+
+        cb => {
+          error = new Error('error-5');
+          protectedFunction((err, r) => cb(null, { err, r }));
+        }
+      ], (err, results) => {
+        assert.ifError(err);
+
+        // No circuit breaker open error
+        assert.equal(results[0].err.message, 'error-1');
+        assert.equal(results[1].err.message, 'error-2');
+        assert.equal(results[2].err.message, 'test.func: the circuit-breaker is open');
+        assert.equal(results[4].r.succeed, true);
+        assert.equal(results[5].err.message, 'error-4');
+        assert.equal(results[6].err.message, 'error-5');
+
+        done();
+      });
+    });
+
     it('should backoff on multiple failures', function (done) {
       async.series([
         cb => sut(() => cb()),
