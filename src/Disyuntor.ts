@@ -101,9 +101,9 @@ export class Disyuntor extends EventEmitter {
 
       const result = await Promise.race([ timeout,  promise ]);
 
-      if (state === State.HalfOpen) {
-        this.reset();
-      }
+      //If it worked we need to reset it, regardless if is half-open or closed,
+      //the failures counter is meant to accumulate failures in a row.
+      this.reset();
 
       return result;
     } catch(err) {

@@ -1,3 +1,4 @@
+const Disyuntor = require('../lib/Disyuntor').Disyuntor;
 const disyuntor = require('../lib/Disyuntor').wrapCallbackApi;
 const assert = require('chai').assert;
 const async = require('async');
@@ -368,4 +369,31 @@ describe('disyuntor', function () {
 
   });
 
+  describe('intermitent failures', function() {
+    it('should count failures in a row', async function() {
+      const disyuntor = new Disyuntor({
+        name: 'disyuntor test',
+        maxFailures: 2,
+      });
+
+      //fail
+      try {
+        await disyuntor.protect(() => {
+          throw new Error('error 1');
+        })
+      } catch(err){}
+
+      //works
+      await disyuntor.protect(async () => 1);
+
+      //fails
+      try {
+        await disyuntor.protect(() => {
+          throw new Error('error 1');
+        })
+      } catch(err){}
+
+      await disyuntor.protect(async () => 1);
+    });
+  });
 });
