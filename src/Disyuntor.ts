@@ -80,9 +80,10 @@ export class Disyuntor extends EventEmitter {
   }
 
   async protect<A, T extends PromiseBuilder<A>>(call: T): Promise<A> {
-    if(this.state === State.Open) {
+    const state = this.state;
+    if(state === State.Open) {
       throw new DisyuntorError(`${this.params.name}: the circuit-breaker is open`, this.state);
-    } else if (this.state === State.HalfOpen) {
+    } else if (state === State.HalfOpen) {
       this.currentCooldown = Math.min(this.currentCooldown * (this.failures + 1), <number>this.params.maxCooldown);
     }
 
@@ -98,7 +99,13 @@ export class Disyuntor extends EventEmitter {
         <number>this.params.timeout,
         promise);
 
-      return await Promise.race([ timeout,  promise ]);
+      const result = await Promise.race([ timeout,  promise ]);
+
+      if (state === State.HalfOpen) {
+        this.reset();
+      }
+
+      return result;
     } catch(err) {
       if (this.params.trigger(err)) {
         this.failures++;
