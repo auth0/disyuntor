@@ -50,6 +50,10 @@ const dnsSafeLookup = disyuntor.wrapCallbackApi({
 Last error was ${err.message}! There will be no more attempts for ${cooldown}ms.`);
   },
 
+  onClose: (cooldown) => {
+    console.log(`dns.lookup circuit closed after ${cooldown}ms.`;
+  }
+
   // //optional callback to prevent some errors to trigger the disyuntor logic
   // //in this case ENOTFOUND is passed to the callback and will
   // //not trigger the breaker eg:
