@@ -146,6 +146,66 @@ describe('disyuntor', function () {
       });
     });
 
+
+    it('should call onClose after closing in half open state', (done) => {
+      let closeEvents = [];
+
+      protectedFunction = disyuntor({
+        name: 'test.func',
+        timeout: '10ms',
+        maxFailures: 2,
+        cooldown: 200,
+        maxCooldown: 400,
+        onTrip: (err, failures, cooldown) => tripCalls.push({err, failures, cooldown}),
+        onClose: (cooldown) => { closeEvents.push({ cooldown}); }
+      }, function(cb) {
+        if (error) {
+          return cb(error);
+        }
+
+        return cb(null, { succeed: true });
+      });
+
+      async.series([
+        // Open the circuit
+        cb => {
+          error = new Error('error-1');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+        cb => {
+          error = new Error('error-2');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+        cb => {
+          error = new Error('error-3');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+
+        // Wait cooldown
+        cb => setTimeout(cb, 250),
+
+        // This should move state from half open to closed
+        cb => {
+          error = null;
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+
+        // Fail again, this should not open the circuit because failures should
+        // have reset
+        cb => {
+          error = new Error('error-4');
+          protectedFunction((err, r) => cb(null, { err, r }))
+        },
+      ], (err) => {
+        assert.ifError(err);
+
+        assert.equal(closeEvents.length, 1);
+        assert.deepEqual(closeEvents[0], { cooldown: 200, });
+
+        done();
+      });
+    });
+
     it('should backoff on multiple failures', function (done) {
       async.series([
         cb => sut(() => cb()),

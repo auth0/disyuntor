@@ -39,6 +39,12 @@ export namespace Options {
     onTrip?(err: Error, failures: number, currentCooldown: number): any;
 
     /**
+     * Callback executed every time the circuit-breaker closes after half-open state.
+     * @param currentCooldown The amount of milliseconds before closing back.
+     */
+    onClose?(currentCooldown: number): any;
+
+    /**
      * Callback executed to verify if an error should trigger the circuit-breaker logic.
      * @param {Error} err the error to verify.
      * @returns {Boolean} false if we want to skip the error

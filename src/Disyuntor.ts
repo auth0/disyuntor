@@ -59,6 +59,10 @@ export class Disyuntor extends EventEmitter {
     if (typeof this.params.onTrip === 'function') {
       this.on('trip', this.params.onTrip);
     }
+
+    if (typeof this.params.onClose === 'function') {
+      this.on('close', this.params.onClose);
+    }
   }
 
   reset() {
@@ -81,6 +85,8 @@ export class Disyuntor extends EventEmitter {
 
   async protect<A, T extends PromiseBuilder<A>>(call: T): Promise<A> {
     const state = this.state;
+    const cooldown = this.currentCooldown;
+
     if(state === State.Open) {
       throw new DisyuntorError(`${this.params.name}: the circuit-breaker is open`, this.state);
     } else if (state === State.HalfOpen) {
@@ -100,6 +106,10 @@ export class Disyuntor extends EventEmitter {
         promise);
 
       const result = await Promise.race([ timeout,  promise ]);
+
+      if (state === State.HalfOpen) {
+        this.emit('close', cooldown);
+      }
 
       //If it worked we need to reset it, regardless if is half-open or closed,
       //the failures counter is meant to accumulate failures in a row.
