@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "main": "./lib/Disyuntor.js",
+  "types": "./lib/Disyuntor.d.ts",
   "scripts": {
     "build": "tsc",
     "prepublish": "tsc",
