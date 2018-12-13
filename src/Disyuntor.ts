@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events'
-import ms from 'ms'
 
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';

@@ -13,9 +13,7 @@
     "prepublish": "tsc",
     "test": "istanbul cover _mocha"
   },
-  "dependencies": {
-    "ms": "~0.7.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/bluebird": "^3.5.24",
     "@types/ms": "^0.7.30",
