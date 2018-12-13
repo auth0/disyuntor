@@ -14,7 +14,7 @@
     "test": "istanbul cover _mocha"
   },
   "dependencies": {
-    "ms": "~0.7.1"
+    "ms": "^2.1.1"
   },
   "devDependencies": {
     "@types/bluebird": "^3.5.24",
