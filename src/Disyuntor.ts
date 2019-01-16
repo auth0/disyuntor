@@ -10,6 +10,7 @@ const defaults = {
   timeout:     '2s',
   maxFailures: 5,
   cooldown:    '15s',
+  maxCooldown: '30s',
   trigger:     () => true
 };
 
@@ -71,9 +72,12 @@ export class Disyuntor extends EventEmitter {
     this.currentCooldown = <number>this.params.cooldown;
   }
 
+
   get state(): State {
     if (this.failures >= this.params.maxFailures) {
-      if ((Date.now() - this.lastFailure) < this.currentCooldown) {
+      const timeSinceLastFailure = Date.now() - this.lastFailure;
+      // check to see if this failure has occurred within the cooldown period
+      if (timeSinceLastFailure < this.currentCooldown) {
         return State.Open;
       } else {
         return State.HalfOpen;
@@ -88,9 +92,15 @@ export class Disyuntor extends EventEmitter {
     const cooldown = this.currentCooldown;
 
     if(state === State.Open) {
-      throw new DisyuntorError(`${this.params.name}: the circuit-breaker is open`, this.state);
+      throw new DisyuntorError(
+          `${this.params.name}: the circuit-breaker is open`,
+          this.state
+      );
     } else if (state === State.HalfOpen) {
-      this.currentCooldown = Math.min(this.currentCooldown * (this.failures + 1), <number>this.params.maxCooldown);
+      this.currentCooldown = Math.min(
+          this.currentCooldown * (this.failures + 1),
+          <number>this.params.maxCooldown
+      );
     }
 
     try {
