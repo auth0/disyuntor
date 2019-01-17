@@ -453,4 +453,30 @@ describe('disyuntor', function () {
 
     });
   });
+
+  describe('currentCooldown NaN issue', function() {
+    /*
+    Tests that when no maxCooldown is provided that currentCooldown
+    is not NaN
+     */
+    it('current cooldown not NaN on half-open', function(done) {
+        const disyuntor = new Disyuntor({
+            name: 'disyuntor test',
+            maxFailures: 1,
+            cooldown: 1,
+        });
+
+        // set failures to 1 in order to force an state transition to either (Open|HalfOpen)
+        disyuntor.failures = 1;
+        // trigger disyuntor HalfOpen state in order to trigger currentCooldown calculation
+        disyuntor.currentCooldown = -Infinity;
+        disyuntor.protect(() => {
+            throw new Error('error 1');
+        }).catch(() => {
+        }).then(() => {
+          assert.equal(-Infinity, disyuntor.currentCooldown);
+          done();
+        });
+    });
+  });
 });

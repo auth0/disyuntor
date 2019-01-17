@@ -1,7 +1,7 @@
 {
   "name": "disyuntor",
   "description": "A circuit-breaker implementation with exponential backoff.",
-  "version": "3.4.2",
+  "version": "3.4.3",
   "author": "José F. Romaniello <jfromaniello@gmail.com> (http://joseoncode.com)",
   "repository": {
     "url": "git://github.com/jfromaniello/disyuntor.git"
@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc",
     "prepublish": "tsc",
-    "test": "istanbul cover _mocha"
+    "test": "npm run build && istanbul cover _mocha"
   },
   "dependencies": {
     "ms": "^2.1.1"
