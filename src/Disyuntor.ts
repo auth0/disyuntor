@@ -105,17 +105,19 @@ export class Disyuntor extends EventEmitter {
 
     try {
       const promise = call();
+      let result: A;
 
       if (this.params.timeout === false) {
-        return await promise;
+        result = await promise;
+      } else {
+        const timeout = createTimeout<A>(
+          this.params.name,
+          <number>this.params.timeout,
+          promise);
+
+        result = await Promise.race([ timeout,  promise ]);
       }
 
-      const timeout = createTimeout<A>(
-        this.params.name,
-        <number>this.params.timeout,
-        promise);
-
-      const result = await Promise.race([ timeout,  promise ]);
 
       if (state === State.HalfOpen) {
         this.emit('close', cooldown);
