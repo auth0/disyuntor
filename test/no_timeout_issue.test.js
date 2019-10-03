@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const Disyuntor = require('../lib/Disyuntor').Disyuntor;
+const Disyuntor = require('../src/Disyuntor').Disyuntor;
 
 function sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));

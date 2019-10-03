@@ -1,5 +1,5 @@
-const Disyuntor = require('../lib/Disyuntor').Disyuntor;
-const disyuntor = require('../lib/Disyuntor').wrapCallbackApi;
+const Disyuntor = require('../src/Disyuntor').Disyuntor;
+const disyuntor = require('../src/Disyuntor').wrapCallbackApi;
 const assert = require('chai').assert;
 const async = require('async');
 

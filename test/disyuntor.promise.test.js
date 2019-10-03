@@ -1,4 +1,4 @@
-const { wrapPromise, DisyuntorError } = require('../lib/Disyuntor');
+const { wrapPromise, DisyuntorError } = require('../src/Disyuntor');
 const disyuntor = wrapPromise;
 const assert    = require('chai').assert;
 const async     = require('async');
