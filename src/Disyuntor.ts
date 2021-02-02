@@ -4,7 +4,6 @@ import ms from 'ms'
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
-import { getHeapStatistics } from 'v8';
 
 const defaults = {
   timeout:     '2s',
@@ -156,15 +155,19 @@ export function wrapCallbackApi<T extends (...args: any[]) => void>(
     disyuntor.protect(() => {
       return new Promise((resolve, reject) => {
         const newArgs = args.slice(0, -1)
-          .concat((err?: Error, ...args: any[]) => {
+          .concat((err: Error | null, ...cbArgs: any[]) => {
             if (err) { return reject(err); }
-            resolve(...args);
+            resolve(cbArgs);
           });
         call.call(thisParam, ...newArgs)
       });
     }).then(
-      (...args) => {
-        callback(null, ...args)
+      (args) => {
+        if (Array.isArray(args)) {
+          callback(null, ...args);
+        } else {
+          callback(null, args);
+        }
       },
       err => {
         callback(err);

@@ -479,4 +479,23 @@ describe('disyuntor', function () {
         });
     });
   });
+
+  describe('when callback has more than one result', function() {
+
+    it.only('passes ALL of the results to the callback', (done) => {
+      const doMathOnFourNumbers = (num1, num2, num3, num4, cb) => {
+        const sum = num1 + num2 + num3 + num4;
+        const avg = sum / 4;
+        cb(null, sum, avg);
+      }
+
+      const protectedMathOnFourNumbers = disyuntor({ name: 'mathOnFourNumbers' }, doMathOnFourNumbers);
+
+      protectedMathOnFourNumbers(2, 3, 4, 5, (err, sum, avg) => {
+        assert.equal(sum, 14);
+        assert.equal(avg, 3.5);
+        done();
+      });
+    });
+  });
 });
