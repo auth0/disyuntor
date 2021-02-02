@@ -482,7 +482,7 @@ describe('disyuntor', function () {
 
   describe('when callback has more than one result', function() {
 
-    it.only('passes ALL of the results to the callback', (done) => {
+    it('passes ALL of the results to the callback', (done) => {
       const doMathOnFourNumbers = (num1, num2, num3, num4, cb) => {
         const sum = num1 + num2 + num3 + num4;
         const avg = sum / 4;
