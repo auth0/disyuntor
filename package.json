@@ -1,7 +1,7 @@
 {
   "name": "disyuntor",
   "description": "A circuit-breaker implementation with exponential backoff.",
-  "version": "3.4.6",
+  "version": "3.5.0",
   "author": "José F. Romaniello <jfromaniello@gmail.com> (http://joseoncode.com)",
   "repository": {
     "url": "git://github.com/jfromaniello/disyuntor.git"
