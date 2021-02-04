@@ -30,6 +30,7 @@ export class Disyuntor extends EventEmitter {
   currentCooldown?: number;
 
   public get timeout(): number {
+    // FIXME pretty sure this *could* be a 'false' boolean value
     //this is already parsed
     return <number>this.params.timeout;
   }

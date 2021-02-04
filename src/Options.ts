@@ -51,6 +51,6 @@ export namespace Options {
      */
     trigger?(err: Error): boolean;
 
-    [key: string]: string | Function | number | boolean;
+    //[key: string]: string | Function | number | boolean;
   }
 }
