@@ -13,8 +13,6 @@ const defaults = {
   trigger:     () => true
 };
 
-const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
-
 enum State {
   Closed = "closed",
   Open = "open",
@@ -47,12 +45,15 @@ export class Disyuntor extends EventEmitter {
       throw new Error('invalid timeout parameter. It should be either a timespan or false.');
     }
 
-    timeProps.forEach(k => {
-      var v = this.params[k];
-      if (typeof v === 'string') {
-        this.params[k] = ms(v);
-      }
-    });
+    if (typeof this.params.timeout === 'string') {
+      this.params.timeout = ms(this.params.timeout);
+    }
+    if (typeof this.params.cooldown === 'string') {
+      this.params.cooldown = ms(this.params.cooldown);
+    }
+    if (typeof this.params.maxCooldown === 'string') {
+      this.params.maxCooldown = ms(this.params.maxCooldown);
+    }
 
     this.reset();
 
