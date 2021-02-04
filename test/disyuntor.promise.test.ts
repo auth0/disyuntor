@@ -1,13 +1,13 @@
-const { wrapPromise, DisyuntorError } = require('../src/Disyuntor');
-const disyuntor = wrapPromise;
-const assert = require('chai').assert;
-const async = require('async');
-const bbPromise = require('bluebird');
+import { wrapPromise as disyuntor, DisyuntorError } from '../src/Disyuntor';
+import { assert } from 'chai';
+import otherAsync from 'async';
+import bbPromise from 'bluebird';
 
 describe('promise interface', function () {
 
   it('should throw an error if func is undefined', function () {
     try {
+      //@ts-ignore
       disyuntor();
     } catch(err) {
       assert.match(err.message,
@@ -16,6 +16,7 @@ describe('promise interface', function () {
   });
 
   it('should throw an error if func does not return a promise', function () {
+    //@ts-ignore
     return disyuntor({ name: 'null.fail' }, () => {})()
       .catch((err: Error) => {
         assert.equal(err.message, 'expecting a promise but got [object Undefined]');
@@ -73,7 +74,7 @@ describe('promise interface', function () {
     });
 
     it('should backoff on multiple failures', function (done) {
-      async.series([
+      otherAsync.series([
         (cb: () => any) => sut().catch(() => cb()),
 
         //first cooldown of 200ms
