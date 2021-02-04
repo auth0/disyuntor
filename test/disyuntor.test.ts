@@ -1,4 +1,4 @@
-import { Disyuntor, wrapCallbackApi as disyuntor} from "../lib/Disyuntor";
+import { Disyuntor, wrapCallbackApi as disyuntor} from "../src/Disyuntor";
 import { assert } from 'chai';
 import otherAsync from 'async';
 
