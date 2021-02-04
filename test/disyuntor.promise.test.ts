@@ -1,8 +1,8 @@
 const { wrapPromise, DisyuntorError } = require('../src/Disyuntor');
 const disyuntor = wrapPromise;
-const assert    = require('chai').assert;
-const async     = require('async');
-const Promise   = require('bluebird');
+const assert = require('chai').assert;
+const async = require('async');
+const bbPromise = require('bluebird');
 
 describe('promise interface', function () {
 
@@ -17,14 +17,14 @@ describe('promise interface', function () {
 
   it('should throw an error if func does not return a promise', function () {
     return disyuntor({ name: 'null.fail' }, () => {})()
-      .catch(err => {
+      .catch((err: Error) => {
         assert.equal(err.message, 'expecting a promise but got [object Undefined]');
       });
   });
 
   describe('when the protected promise never ends', function () {
-    var monitorCalls = [];
-    var sut;
+    let monitorCalls: any[] = [];
+    let sut: Function;
 
     beforeEach(function () {
       monitorCalls = [];
@@ -34,13 +34,13 @@ describe('promise interface', function () {
         maxFailures: 1,
         cooldown: 200,
         maxCooldown: 400,
-        onTrip: (err, failures, cooldown) => monitorCalls.push({err, failures, cooldown})
-      }, () => new Promise(() => {}));
+        onTrip: (err: Error, failures: number, cooldown: number) => monitorCalls.push({err, failures, cooldown})
+      }, () => new bbPromise(() => {}));
     });
 
     it('should fail with timeout', function () {
       const startTime = Date.now();
-      return sut().catch(err => {
+      return sut().catch((err: Error) => {
         assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
         assert.closeTo(Date.now() - startTime, 10, 10);
         assert.equal(monitorCalls.length, 1);
@@ -48,9 +48,9 @@ describe('promise interface', function () {
     });
 
     it('should fail immediately after "maxFailures"', function () {
-      return sut().catch((originalError) => {
+      return sut().catch((originalError: Error) => {
         const startTime = Date.now();
-        return sut().catch(err => {
+        return sut().catch((err: Error) => {
           assert.instanceOf(err, Error);
           assert.instanceOf(err, DisyuntorError);
           assert.match(err.message, /test\.func: the circuit-breaker is open/);
@@ -63,7 +63,7 @@ describe('promise interface', function () {
     it('should try again after "cooldown" msecs', function (done) {
       sut().catch(() => {
         setTimeout(() => {
-          sut().catch((err) => {
+          sut().catch((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             assert.equal(monitorCalls.length, 2);
             done();
@@ -74,38 +74,38 @@ describe('promise interface', function () {
 
     it('should backoff on multiple failures', function (done) {
       async.series([
-        cb => sut().catch(() => cb()),
+        (cb: () => any) => sut().catch(() => cb()),
 
         //first cooldown of 200ms
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut().catch(err => {
+        (cb: () => any) => setTimeout(cb, 200),
+        (cb: () => any) => {
+          sut().catch((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             cb();
           });
         },
 
         //at this point the circuit is open, and is going back to half-open after 400ms.
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut().catch(err => {
+        (cb: () => any) => setTimeout(cb, 200),
+        (cb: () => any) => {
+          sut().catch((err: Error) => {
             assert.match(err.message, /test\.func: the circuit-breaker is open/);
             cb();
           });
         },
 
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut().catch(err => {
+        (cb: () => any) => setTimeout(cb, 200),
+        (cb: () => any) => {
+          sut().catch((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             cb();
           });
         },
 
         //once reached the maxcooldown
-        cb => setTimeout(cb, 400),
-        cb => {
-          sut().catch(err => {
+        (cb: () => any) => setTimeout(cb, 400),
+        (cb: () => any) => {
+          sut().catch((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             cb();
           });
@@ -119,9 +119,9 @@ describe('promise interface', function () {
 
 
   describe('when the protected promise fails', function () {
-    var monitorCalls = [];
-    var sut;
-    var fail = false;
+    let monitorCalls: any[] = [];
+    let sut: Function;
+    let fail: boolean = false;
 
     beforeEach(function () {
       monitorCalls = [];
@@ -131,9 +131,9 @@ describe('promise interface', function () {
         timeout: 10,
         maxFailures: 1,
         cooldown: 200,
-        onTrip: (err, failures, cooldown) => monitorCalls.push({ err, failures, cooldown })
-      }, (i) => {
-        return new Promise((resolve, reject) => {
+        onTrip: (err: Error, failures: number, cooldown: number) => monitorCalls.push({ err, failures, cooldown })
+      }, (i: any) => {
+        return new bbPromise((resolve: (arg0: any) => void, reject: (arg0: Error) => any) => {
           if (fail) {
             return reject(new Error('failure'));
           }
@@ -144,10 +144,10 @@ describe('promise interface', function () {
 
     it('should change to open if it fail', function () {
       fail = true;
-      return sut(2).catch(err1 => {
+      return sut(2).catch((err1: Error) => {
         assert.equal(err1.message, 'failure');
         assert.equal(monitorCalls.length, 1);
-        return sut(2).catch(err2 => {
+        return sut(2).catch((err2: Error) => {
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
           assert.equal(monitorCalls[0].err, err1);
         });
@@ -155,7 +155,7 @@ describe('promise interface', function () {
     });
 
     it('should remain closed if it works', function () {
-      return sut(2).then(function (result) {
+      return sut(2).then(function (result: any) {
         assert.equal(result, 2);
       });
     });
@@ -164,15 +164,15 @@ describe('promise interface', function () {
       fail = true;
 
       return sut(2)
-              .catch(() => Promise.delay(200))
+              .catch(() => bbPromise.delay(200))
               .then(() => {
                 fail = false;
                 return sut(2);
-              }).then(result => {
+              }).then((result: any) => {
                 assert.equal(result, 2);
               })
               .then(() => sut(3))
-              .then(result => {
+              .then((result: any) => {
                 assert.equal(result, 3);
               });
     });

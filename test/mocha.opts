@@ -2,4 +2,4 @@
 --require source-map-support/register
 --full-trace
 --bail
-test/*.test.js
+test/*.test.js test/*.test.ts
