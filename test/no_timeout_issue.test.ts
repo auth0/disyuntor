@@ -1,7 +1,7 @@
-const { assert } = require('chai');
-const Disyuntor = require('../src/Disyuntor').Disyuntor;
+import { assert } from 'chai';
+import { Disyuntor } from '../src/Disyuntor';
 
-function sleep (time) {
+function sleep (time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
@@ -17,7 +17,7 @@ describe('an issue when timeout is disabled', () => {
   it('should switch to close after cool down', async () => {
     const ignoreErr = () => {}
     const throwErr = () => { throw new Error('ue'); };
-    const return1 = () => 1;
+    const return1 = () => new Promise((resolve) => resolve(1));
 
     await disyuntor.protect(throwErr).catch(ignoreErr);
     await disyuntor.protect(throwErr).catch(ignoreErr);
@@ -31,10 +31,9 @@ describe('an issue when timeout is disabled', () => {
 
     await sleep(100);
 
+    //FYI - lack of error indicates test passed.  If breaker did not re-close then we'd have an error thrown here.
     await disyuntor.protect(return1);
     await disyuntor.protect(return1);
     await disyuntor.protect(return1);
   });
-
-
 });

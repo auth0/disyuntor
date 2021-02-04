@@ -19,6 +19,7 @@ enum State {
   HalfOpen = "half open",
 }
 
+// TODO cleaner type definition + document
 type PromiseBuilder<T> = (...args: any[]) => Promise<T>;
 
 export class Disyuntor extends EventEmitter {
