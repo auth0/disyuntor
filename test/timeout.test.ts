@@ -1,7 +1,5 @@
-'use strict'
-
-const { create } = require('../src/Timeout');
-const { assert } = require('chai');
+import { create } from '../src/Timeout';
+import { assert } from 'chai';
 
 describe('When providing a timeout', () => {
 
@@ -9,7 +7,7 @@ describe('When providing a timeout', () => {
     const milliseconds = 50;
 
     it('rejects when promise is too slow', (done) => {
-        const slowPromise = new Promise((resolve, reject) => {
+        const slowPromise = new Promise<void>((resolve, reject) => {
             setTimeout(() => {
                 resolve();
             }, milliseconds * 2);
