@@ -1,17 +1,18 @@
 import {Options} from "./Options";
+import ms from "ms";
 
 /**
  * Internal representation of the various thresholds (time/count) for the circuit breaker algorithm
  */
 export class ThresholdsConfig {
-  private readonly enforceCallTimeout: boolean;
-  private readonly callTimeoutMs: number;
-  private readonly maxConsecutiveFailures: number;
-  private readonly minCooldownTimeMs: number;
-  private readonly maxCooldownTimeMs: number;
+  readonly enforceCallTimeout: boolean;
+  readonly callTimeoutMs: number;
+  // TODO this assumes a single backoff algo.  Future improvement: define backoff algo seperately
+  readonly maxConsecutiveFailures: number;
+  readonly minCooldownTimeMs: number;
+  readonly maxCooldownTimeMs: number;
 
   constructor(
-      // NOTE: there is external-facing documentation in Options.ts that enumerates "defaults".  Keep it in sync with this.
       enforceCallTimeout: boolean = true,
       callTimeoutMs: number = 2000,
       maxConsecutiveFailures: number = 5,
@@ -38,12 +39,63 @@ export class ThresholdsConfig {
  */
 export class DisyuntorConfig {
 
-    public static fromParameters(parameters: Options.Parameters): DisyuntorConfig{
-        const thresholdsConfig = new ThresholdsConfig();
-        return new DisyuntorConfig(parameters.name, thresholdsConfig);
+    /**
+     * Convenience method for mixed-bag time objects
+     *
+     * @param input represents a time unit.  If a number, it's milliseconds.  If a string, it's assumed to be
+     * be something the ms library can parse (i.e. '5s').
+     * @param defaultValue value to use if it's not a number or string that can be parsed by ms lib
+     * @return number of milliseconds, or default if none provided/parsable
+     */
+    private static getMilliseconds(input: number | string | boolean | undefined, defaultValue: number): number {
+        if(typeof input === 'number') {
+            return input;
+        } else if (typeof input === 'string') {
+            return ms(input);
+        } else {
+            return defaultValue;
+        }
     }
 
-    constructor(name: string, thresholdConfig: ThresholdsConfig, ) {
+    public static fromParameters(parameters: Options.Parameters): DisyuntorConfig{
+        if (typeof parameters.name === 'undefined') {
+            throw new Error('params.name is required');
+        }
 
+        // TODO centralize defaults and use here
+        let enforceCallTimeout: boolean = true;
+        if (parameters.timeout === true) {
+            throw new Error('invalid timeout parameter. It should be either a timespan or false.');
+        } else if (parameters.timeout === false) {
+            enforceCallTimeout = false;
+        }
+
+        // TODO centralize defaults and use here
+        const thresholdConfig = new ThresholdsConfig(
+            enforceCallTimeout,
+            this.getMilliseconds(parameters.timeout, 2000),
+            parameters.maxFailures,
+            this.getMilliseconds(parameters.cooldown, 15000),
+            this.getMilliseconds(parameters.maxCooldown, 30000)
+        );
+        return new DisyuntorConfig(parameters.name, thresholdConfig, parameters.onTrip, parameters.onClose, parameters.trigger);
+    }
+
+    readonly name;
+    readonly thresholdConfig;
+    readonly onBreakerTripEvent?: (err: Error, failures: number, currentCooldown: number) => any;
+    readonly onBreakerCloseEvent?: (currentCooldown: number) => any;
+    readonly shouldTriggerAsFailure?: (err: Error) => boolean;
+
+    constructor(name: string,
+                thresholdConfig: ThresholdsConfig,
+                onBreakerTripEvent?: (err: Error, failures: number, currentCooldown: number) => any,
+                onBreakerCloseEvent?: (currentCooldown: number) => any,
+                shouldTriggerAsFailure?: (err: Error) => boolean) {
+        this.name = name;
+        this.thresholdConfig = thresholdConfig;
+        this.onBreakerTripEvent = onBreakerTripEvent;
+        this.onBreakerCloseEvent = onBreakerCloseEvent;
+        this.shouldTriggerAsFailure = shouldTriggerAsFailure;
     }
 }

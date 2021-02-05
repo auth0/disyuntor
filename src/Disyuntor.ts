@@ -4,6 +4,7 @@ import ms from 'ms'
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
+import {addListener} from "cluster";
 
 const defaults = {
   timeout:     '2s',
@@ -76,9 +77,11 @@ export class Disyuntor extends EventEmitter {
 
 
   get state(): State {
+    //@ts-ignore
     if (this.failures >= this.params.maxFailures) {
       const timeSinceLastFailure = Date.now() - this.lastFailure;
       // check to see if this failure has occurred within the cooldown period
+      //@ts-ignore
       if (timeSinceLastFailure < this.currentCooldown) {
         return State.Open;
       } else {
@@ -100,6 +103,7 @@ export class Disyuntor extends EventEmitter {
       );
     } else if (state === State.HalfOpen) {
       this.currentCooldown = Math.min(
+          //@ts-ignore
           this.currentCooldown * (this.failures + 1),
           <number>this.params.maxCooldown
       );
@@ -131,9 +135,11 @@ export class Disyuntor extends EventEmitter {
 
       return result;
     } catch(err) {
+      //@ts-ignore
       if (this.params.trigger(err)) {
         this.failures++;
         this.lastFailure = Date.now();
+        //@ts-ignore
         if (this.failures >= this.params.maxFailures) {
           this.emit('trip',
             err,

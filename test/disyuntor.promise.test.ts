@@ -1,7 +1,7 @@
 import { wrapPromise as disyuntor, DisyuntorError } from '../src/Disyuntor';
 import { assert } from 'chai';
-import otherAsync from 'async';
-import bbPromise from 'bluebird';
+import  * as otherAsync from 'async';
+import { Promise as bbPromise } from 'bluebird';
 
 describe('promise interface', function () {
 

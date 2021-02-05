@@ -1,6 +1,6 @@
 import { Disyuntor, wrapCallbackApi as disyuntor} from "../src/Disyuntor";
 import { assert } from 'chai';
-import otherAsync from 'async';
+import * as otherAsync from 'async';
 
 describe('disyuntor', function () {
 
@@ -66,6 +66,7 @@ describe('disyuntor', function () {
     it('should allow only one attempt on the half-open state', function (done) {
       sut(() => {
         setTimeout(() => {
+          //@ts-ignore
           otherAsync.parallel([
             done => sut((err: Error) => done(null, err)),
             done => sut((err: Error) => done(null, err)),
@@ -97,6 +98,7 @@ describe('disyuntor', function () {
         return cb(null, { succeed: true });
       });
 
+      //@ts-ignore
       otherAsync.series([
         // Open the circuit
         cb => {
@@ -117,6 +119,7 @@ describe('disyuntor', function () {
 
         // This should move state from half open to closed
         cb => {
+          //@ts-ignore
           error = null;
           protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
@@ -189,6 +192,7 @@ describe('disyuntor', function () {
 
         // This should move state from half open to closed
         cb => {
+          //@ts-ignore
           error = null;
           protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
@@ -502,10 +506,12 @@ describe('disyuntor', function () {
     });
 
     it('does not incorrectly expand an array argument', (done) => {
+      //@ts-ignore
       const returnAnArray = (callback) => setImmediate(() => callback(null, [1, 2, 3]));
 
       const protectedReturnAnArray = disyuntor({ name: 'returnAnArray' }, returnAnArray);
 
+      //@ts-ignore
       protectedReturnAnArray((err, vals) => {
         assert.equal(vals[0], 1);
         assert.equal(vals[1], 2);
