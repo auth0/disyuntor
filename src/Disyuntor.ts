@@ -1,19 +1,9 @@
 import { EventEmitter } from 'events'
-import ms from 'ms'
 
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
-import {addListener} from "cluster";
 import {DisyuntorConfig} from "./Config";
-
-const defaults = {
-  timeout:     '2s',
-  maxFailures: 5,
-  cooldown:    '15s',
-  maxCooldown: '30s',
-  trigger:     () => true
-};
 
 enum State {
   Closed = "closed",

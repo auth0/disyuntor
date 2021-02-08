@@ -1,4 +1,3 @@
-// import Promise from 'bluebird'
 import { DisyuntorError } from './DisyuntorError'
 
 export class TimeoutError extends DisyuntorError {
