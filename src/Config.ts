@@ -85,13 +85,13 @@ export class DisyuntorConfig {
     readonly thresholdConfig;
     readonly onBreakerTripEvent?: (err: Error, failures: number, currentCooldown: number) => any;
     readonly onBreakerCloseEvent?: (currentCooldown: number) => any;
-    readonly shouldTriggerAsFailure?: (err: Error) => boolean;
+    readonly shouldTriggerAsFailure: (err: Error) => boolean;
 
     constructor(name: string,
                 thresholdConfig: ThresholdsConfig,
                 onBreakerTripEvent?: (err: Error, failures: number, currentCooldown: number) => any,
                 onBreakerCloseEvent?: (currentCooldown: number) => any,
-                shouldTriggerAsFailure?: (err: Error) => boolean) {
+                shouldTriggerAsFailure: (err: Error) => boolean = () => true) {
         this.name = name;
         this.thresholdConfig = thresholdConfig;
         this.onBreakerTripEvent = onBreakerTripEvent;
