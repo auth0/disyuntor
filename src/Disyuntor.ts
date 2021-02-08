@@ -4,7 +4,6 @@ import ms from 'ms'
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
-import { getHeapStatistics } from 'v8';
 
 const defaults = {
   timeout:     '2s',
@@ -13,8 +12,6 @@ const defaults = {
   maxCooldown: '30s',
   trigger:     () => true
 };
-
-const timeProps = ['timeout', 'cooldown', 'maxCooldown'];
 
 enum State {
   Closed = "closed",
@@ -48,12 +45,15 @@ export class Disyuntor extends EventEmitter {
       throw new Error('invalid timeout parameter. It should be either a timespan or false.');
     }
 
-    timeProps.forEach(k => {
-      var v = this.params[k];
-      if (typeof v === 'string') {
-        this.params[k] = ms(v);
-      }
-    });
+    if (typeof this.params.timeout === 'string') {
+      this.params.timeout = ms(this.params.timeout);
+    }
+    if (typeof this.params.cooldown === 'string') {
+      this.params.cooldown = ms(this.params.cooldown);
+    }
+    if (typeof this.params.maxCooldown === 'string') {
+      this.params.maxCooldown = ms(this.params.maxCooldown);
+    }
 
     this.reset();
 
@@ -156,15 +156,19 @@ export function wrapCallbackApi<T extends (...args: any[]) => void>(
     disyuntor.protect(() => {
       return new Promise((resolve, reject) => {
         const newArgs = args.slice(0, -1)
-          .concat((err?: Error, ...args: any[]) => {
+          .concat((err: Error | null, ...cbArgs: any[]) => {
             if (err) { return reject(err); }
-            resolve(...args);
+            resolve(cbArgs);
           });
         call.call(thisParam, ...newArgs)
       });
     }).then(
-      (...args) => {
-        callback(null, ...args)
+      (args) => {
+        if (Array.isArray(args)) {
+          callback(null, ...args);
+        } else {
+          callback(null, args);
+        }
       },
       err => {
         callback(err);

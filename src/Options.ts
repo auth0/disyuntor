@@ -26,7 +26,7 @@ export namespace Options {
 
     /**
      * The maximum time the circuit remains open before doing a new attempt.
-     * Defaults to 60s
+     * Defaults to 30s
      */
     maxCooldown?: number | string;
 

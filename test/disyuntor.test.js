@@ -479,4 +479,36 @@ describe('disyuntor', function () {
         });
     });
   });
+
+  describe('when callback has more than one result', function() {
+
+    it('passes ALL of the results to the callback', (done) => {
+      const doMathOnFourNumbers = (num1, num2, num3, num4, cb) => {
+        const sum = num1 + num2 + num3 + num4;
+        const avg = sum / 4;
+        cb(null, sum, avg);
+      }
+
+      const protectedMathOnFourNumbers = disyuntor({ name: 'mathOnFourNumbers' }, doMathOnFourNumbers);
+
+      protectedMathOnFourNumbers(2, 3, 4, 5, (err, sum, avg) => {
+        assert.equal(sum, 14);
+        assert.equal(avg, 3.5);
+        done();
+      });
+    });
+
+    it('does not incorrectly expand an array argument', (done) => {
+      const returnAnArray = (callback) => setImmediate(() => callback(null, [1, 2, 3]));
+
+      const protectedReturnAnArray = disyuntor({ name: 'returnAnArray' }, returnAnArray);
+
+      protectedReturnAnArray((err, vals) => {
+        assert.equal(vals[0], 1);
+        assert.equal(vals[1], 2);
+        assert.equal(vals[2], 3);
+        done();
+      });
+    });
+  });
 });

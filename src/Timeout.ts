@@ -12,7 +12,7 @@ export class TimeoutError extends DisyuntorError {
 class CancellablePromise<T> extends Promise<T> {
   private onCancel: () => void;
 
-  constructor(callback: (resolve: () => void, reject: (error?: any) => void, onCancel?: (callback: () => void) => void) => void) {
+  constructor(callback: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void, onCancel?: (callback: () => void) => void) => void) {
     let onCancel: () => void;
     super((resolve, reject) => {
       callback(resolve, reject, f => onCancel = f);
