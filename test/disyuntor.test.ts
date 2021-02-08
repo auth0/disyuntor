@@ -502,7 +502,7 @@ describe('disyuntor', function () {
     });
 
     it('does not incorrectly expand an array argument', (done) => {
-      const returnAnArray = (callback) => setImmediate(() => callback(null, [1, 2, 3]));
+      const returnAnArray = (callback: (arg0: any, arg1: number[]) => void) => setImmediate(() => callback(null, [1, 2, 3]));
 
       const protectedReturnAnArray = disyuntor({ name: 'returnAnArray' }, returnAnArray);
 
