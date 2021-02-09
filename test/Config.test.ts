@@ -32,9 +32,9 @@ describe('Config', () => {
                 expect(disyuntorConfig.thresholdConfig.maxConsecutiveFailures).toEqual(5);
                 expect(disyuntorConfig.thresholdConfig.minCooldownTimeMs).toEqual(15000);
                 expect(disyuntorConfig.thresholdConfig.maxCooldownTimeMs).toEqual(30000);
-                // TODO onTrip
-                // TODO onClose
-                // TODO trigger
+                expect(disyuntorConfig.onBreakerTripEvent).toBeUndefined();
+                expect(disyuntorConfig.onBreakerCloseEvent).toBeUndefined();
+                expect(disyuntorConfig.shouldTriggerAsFailure).toBeInstanceOf(Function)
             });
 
             it('should Error if true is given for timeout', () => {
@@ -121,9 +121,27 @@ describe('Config', () => {
                     expect(disyuntorConfig.thresholdConfig.maxCooldownTimeMs).toEqual(42000);
                 });
             })
+
+            it('Maps onTrip to onBreakerTripEvent ', () => {
+                const onTripFunction = () => true;
+                parameters.onTrip = onTripFunction;
+                const disyuntorConfig = DisyuntorConfig.fromParameters(parameters);
+                expect(disyuntorConfig.onBreakerTripEvent).toEqual(onTripFunction);
+            })
+
+            it('Maps onClose to onBreakerCloseEvent', () => {
+                const onCloseFunction = () => true;
+                parameters.onClose = onCloseFunction;
+                const disyuntorConfig = DisyuntorConfig.fromParameters(parameters);
+                expect(disyuntorConfig.onBreakerCloseEvent).toEqual(onCloseFunction);
+            })
+
+            it('Maps trigger to shouldTriggerAsFailure', () => {
+                const shouldTriggerAsFailureFunction = () => false;
+                parameters.trigger = shouldTriggerAsFailureFunction;
+                const disyuntorConfig = DisyuntorConfig.fromParameters(parameters);
+                expect(disyuntorConfig.shouldTriggerAsFailure).toEqual(shouldTriggerAsFailureFunction);
+            })
         });
     });
-
-    // TODO tests for event listeners (trip/close)
-    // TODO tests for shouldTriggerAsFailure function override
 });
