@@ -50,7 +50,5 @@ export namespace Options {
      * @returns {Boolean} false if we want to skip the error
      */
     trigger?(err: Error): boolean;
-
-    //[key: string]: string | Function | number | boolean;
   }
 }
