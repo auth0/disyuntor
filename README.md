@@ -10,9 +10,9 @@ Disyuntor wraps an async (errback) function and returns a new function with the 
 
 During normal behavior of the system the circuit remains in its `closed` state. This means that every call to the wrapper is forwarded to the protected function.
 
-Once the protected function returns more than `maxFailures`, the breaker trips and every call made during the `cooldown` interval will immdiately return an error preventing resource depletion. This is known as the `open` state.
+Once the protected function returns more than `maxFailures`, the breaker trips and every call made during the `cooldown` interval will immediately return an error preventing resource depletion. This is known as the `open` state.
 
-Once the system has settled it will allow one call to go to the protected function. If the call succeds the breaker will be reset to its `closed` state otherwise it will continue `open`. This state is known as `half open`
+Once the system has settled it will allow one call to go to the protected function. If the call succeeds the breaker will be reset to its `closed` state otherwise it will continue `open`. This state is known as `half open`
 
 A call is considered to have failed if the callback is not called before the `timeout` or if it is called with the first (error) parameter.
 
