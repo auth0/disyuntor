@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "main": "./lib/Disyuntor.js",
+  "types": "./lib/Disyuntor.d.ts",
   "scripts": {
     "build": "tsc",
     "prepare": "tsc",
@@ -31,5 +32,8 @@
     "ts-jest": "^26.5.0",
     "ts-node": "^7.0.1",
     "typescript": "^4.1.3"
-  }
+  },
+  "files": [
+    "lib/**/*"
+  ]
 }
