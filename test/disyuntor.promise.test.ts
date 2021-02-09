@@ -1,26 +1,19 @@
-import { wrapPromise as disyuntor, DisyuntorError } from '../src/Disyuntor';
-import { assert } from 'chai';
-import  * as otherAsync from 'async';
-import { Promise as bbPromise } from 'bluebird';
+import {DisyuntorError, wrapPromise} from '../src/Disyuntor';
+import {assert} from 'chai';
+import * as otherAsync from 'async';
+import {Promise as bbPromise} from 'bluebird';
 
 describe('promise interface', function () {
 
-  it('should throw an error if func is undefined', function () {
-    try {
-      //@ts-ignore
-      disyuntor();
-    } catch(err) {
-      assert.match(err.message,
-          /expecting a function returning a promise but got \[object Undefined\]/);
-    }
+  it('should throw an error if call is undefined', function () {
+    expect(wrapPromise)
+        .toThrowError('expecting a function returning a promise but got [object Undefined]');
   });
 
-  it('should throw an error if func does not return a promise', function () {
+  it('should throw an error if call does not return a promise', function () {
     //@ts-ignore
-    return disyuntor({ name: 'null.fail' }, () => {})()
-      .catch((err: Error) => {
-        assert.equal(err.message, 'expecting a promise but got [object Undefined]');
-      });
+    expect(wrapPromise({name: 'null.fail'}, () => {})())
+        .rejects.toThrowError('expecting a promise but got [object Undefined]')
   });
 
   describe('when the protected promise never ends', function () {
@@ -29,7 +22,7 @@ describe('promise interface', function () {
 
     beforeEach(function () {
       monitorCalls = [];
-      sut = disyuntor({
+      sut = wrapPromise({
         name: 'test.func',
         timeout: 10,
         maxFailures: 1,
@@ -127,7 +120,7 @@ describe('promise interface', function () {
     beforeEach(function () {
       monitorCalls = [];
       fail = false;
-      sut = disyuntor({
+      sut = wrapPromise({
         name: 'test.func',
         timeout: 10,
         maxFailures: 1,

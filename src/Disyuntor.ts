@@ -157,12 +157,12 @@ export function wrapCallbackApi<T extends (...args: any[]) => void>(
 export function wrapPromise<A, T extends PromiseBuilder<A>>(
   params: Options.Parameters,
   call: T
-) {
+): (...args: any[]) => Promise<A> {
   if (typeof call !== 'function') {
     throw new Error(`expecting a function returning a promise but got ${{}.toString.call(call)}`);
   }
   const disyuntor = new Disyuntor(params);
-  return function(...args: any[]): Promise<{} | A> {
+  return function(...args: any[]): Promise<A> {
     return disyuntor.protect(async () => {
       const promise = call(...args);
       if (!promise || !promise.then) {
