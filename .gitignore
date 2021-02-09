@@ -51,4 +51,5 @@ jspm_packages
 
 lib/*
 
-.idea/
+.idea/*
+.vscode/*
