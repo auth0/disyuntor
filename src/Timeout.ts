@@ -1,4 +1,3 @@
-// import Promise from 'bluebird'
 import { DisyuntorError } from './DisyuntorError'
 
 export class TimeoutError extends DisyuntorError {
@@ -17,6 +16,7 @@ class CancellablePromise<T> extends Promise<T> {
     super((resolve, reject) => {
       callback(resolve, reject, f => onCancel = f);
     });
+    //@ts-ignore
     this.onCancel = onCancel;
   }
 
@@ -30,6 +30,7 @@ export function create<T>(name: string, milliseconds: number, mainOp: Promise<an
     const timeout = setTimeout(() => {
       reject(new TimeoutError(name, milliseconds));
     }, milliseconds);
+    //@ts-ignore
     onCancel(() => clearTimeout(timeout));
   });
 

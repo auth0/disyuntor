@@ -1,17 +1,9 @@
 import { EventEmitter } from 'events'
-import ms from 'ms'
 
 import { Options } from './Options';
 import { DisyuntorError } from './DisyuntorError';
 import { create as createTimeout } from './Timeout';
-
-const defaults = {
-  timeout:     '2s',
-  maxFailures: 5,
-  cooldown:    '15s',
-  maxCooldown: '30s',
-  trigger:     () => true
-};
+import {DisyuntorConfig} from "./Config";
 
 enum State {
   Closed = "closed",
@@ -23,59 +15,43 @@ enum State {
 type PromiseBuilder<T> = (...args: any[]) => Promise<T>;
 
 export class Disyuntor extends EventEmitter {
-  private params: Options.Parameters;
+  private config: DisyuntorConfig;
 
   failures: number = 0;
   lastFailure: number = 0;
-  currentCooldown?: number;
+  currentCooldown: number;
 
   public get timeout(): number {
-    //this is already parsed
-    return <number>this.params.timeout;
+    return this.config.thresholdConfig.callTimeoutMs;
   }
 
   constructor(params: Options.Parameters){
     super()
-    this.params = Object.assign({}, defaults, params);
-
-    if (typeof this.params.name === 'undefined') {
-      throw new Error('params.name is required');
-    }
-
-    if (this.params.timeout === true) {
-      throw new Error('invalid timeout parameter. It should be either a timespan or false.');
-    }
-
-    if (typeof this.params.timeout === 'string') {
-      this.params.timeout = ms(this.params.timeout);
-    }
-    if (typeof this.params.cooldown === 'string') {
-      this.params.cooldown = ms(this.params.cooldown);
-    }
-    if (typeof this.params.maxCooldown === 'string') {
-      this.params.maxCooldown = ms(this.params.maxCooldown);
-    }
-
+    this.config = DisyuntorConfig.fromParameters(params);
+    // TODO this is redundant, but necessary for typing.  De-dup
+    this.currentCooldown = this.config.thresholdConfig.minCooldownTimeMs;
     this.reset();
 
-    if (typeof this.params.onTrip === 'function') {
-      this.on('trip', this.params.onTrip);
+    // TODO move this validation + setup elsewhere
+    if (typeof this.config.onBreakerTripEvent === 'function') {
+      this.on('trip', this.config.onBreakerTripEvent);
     }
 
-    if (typeof this.params.onClose === 'function') {
-      this.on('close', this.params.onClose);
+    // TODO move this validation + setup elsewhere
+    if (typeof this.config.onBreakerCloseEvent === 'function') {
+      this.on('close', this.config.onBreakerCloseEvent);
     }
   }
 
   reset() {
     this.failures = 0;
     this.lastFailure = 0;
-    this.currentCooldown = <number>this.params.cooldown;
+    this.currentCooldown = this.config.thresholdConfig.minCooldownTimeMs;
   }
 
-
   get state(): State {
-    if (this.failures >= this.params.maxFailures) {
+    // TODO sliding window?  Error rate?  more failure recognition algorithms
+    if (this.failures >= this.config.thresholdConfig.maxConsecutiveFailures) {
       const timeSinceLastFailure = Date.now() - this.lastFailure;
       // check to see if this failure has occurred within the cooldown period
       if (timeSinceLastFailure < this.currentCooldown) {
@@ -94,13 +70,13 @@ export class Disyuntor extends EventEmitter {
 
     if(state === State.Open) {
       throw new DisyuntorError(
-          `${this.params.name}: the circuit-breaker is open`,
+          `${this.config.name}: the circuit-breaker is open`,
           this.state
       );
     } else if (state === State.HalfOpen) {
       this.currentCooldown = Math.min(
           this.currentCooldown * (this.failures + 1),
-          <number>this.params.maxCooldown
+          this.config.thresholdConfig.maxCooldownTimeMs
       );
     }
 
@@ -108,12 +84,12 @@ export class Disyuntor extends EventEmitter {
       const promise = call();
       let result: A;
 
-      if (this.params.timeout === false) {
+      if (!this.config.thresholdConfig.enforceCallTimeout) {
         result = await promise;
       } else {
         const timeout = createTimeout<A>(
-          this.params.name,
-          <number>this.params.timeout,
+          this.config.name,
+          this.config.thresholdConfig.callTimeoutMs,
           promise);
 
         result = await Promise.race([ timeout,  promise ]);
@@ -130,10 +106,10 @@ export class Disyuntor extends EventEmitter {
 
       return result;
     } catch(err) {
-      if (this.params.trigger(err)) {
+      if (this.config.shouldTriggerAsFailure(err)) {
         this.failures++;
         this.lastFailure = Date.now();
-        if (this.failures >= this.params.maxFailures) {
+        if (this.failures >= this.config.thresholdConfig.maxConsecutiveFailures) {
           this.emit('trip',
             err,
             this.failures,
@@ -181,17 +157,18 @@ export function wrapCallbackApi<T extends (...args: any[]) => void>(
 export function wrapPromise<A, T extends PromiseBuilder<A>>(
   params: Options.Parameters,
   call: T
-) {
+): (...args: any[]) => Promise<A> {
   if (typeof call !== 'function') {
     throw new Error(`expecting a function returning a promise but got ${{}.toString.call(call)}`);
   }
   const disyuntor = new Disyuntor(params);
-  return function(...args: any[]): Promise<{} | A> {
+  return function(...args: any[]): Promise<A> {
     return disyuntor.protect(async () => {
-      var promise = call(...args);
+      const promise = call(...args);
       if (!promise || !promise.then) {
         throw new Error(`expecting a promise but got ${{}.toString.call(promise)}`);
       }
+      // TODO is this redundant?
       return await promise;
     });
   }
