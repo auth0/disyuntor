@@ -1,19 +1,19 @@
-const Disyuntor = require('../src/Disyuntor').Disyuntor;
-const disyuntor = require('../src/Disyuntor').wrapCallbackApi;
-const assert = require('chai').assert;
-const async = require('async');
+import { Disyuntor, wrapCallbackApi as disyuntor} from "../src/Disyuntor";
+import { assert } from 'chai';
+import otherAsync from 'async';
 
 describe('disyuntor', function () {
 
   it('should fail if name is undefined', function () {
     assert.throws(() => {
+      // @ts-ignore
       disyuntor({}, () => {});
     }, /params\.name is required/);
   });
 
   describe('when the protected function doesnt call back', function () {
-    var tripCalls = [];
-    var sut;
+    let tripCalls: any[] = [];
+    let sut: Function;
 
     beforeEach(function () {
       tripCalls = [];
@@ -31,7 +31,7 @@ describe('disyuntor', function () {
 
     it('should fail with timeout', function (done) {
       var startTime = Date.now();
-      sut(err => {
+      sut((err: Error) => {
         assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
         assert.closeTo(Date.now() - startTime, 10, 10);
         assert.equal(tripCalls.length, 1);
@@ -40,9 +40,9 @@ describe('disyuntor', function () {
     });
 
     it('should fail immediately after "maxFailures"', function (done) {
-      sut((originalError) => {
+      sut((originalError: Error) => {
         var startTime = Date.now();
-        sut(err => {
+        sut((err: Error) => {
           assert.match(err.message, /test\.func: the circuit-breaker is open/);
           assert.closeTo(Date.now() - startTime, 1, 2);
           assert.equal(tripCalls[0].err, originalError);
@@ -54,7 +54,7 @@ describe('disyuntor', function () {
     it('should try again after "cooldown" msecs', function (done) {
       sut(() => {
         setTimeout(() => {
-          sut(err => {
+          sut((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             assert.equal(tripCalls.length, 2);
             done();
@@ -66,10 +66,10 @@ describe('disyuntor', function () {
     it('should allow only one attempt on the half-open state', function (done) {
       sut(() => {
         setTimeout(() => {
-          async.parallel([
-            done => sut(err => done(null, err)),
-            done => sut(err => done(null, err)),
-          ], (err, errs) => {
+          otherAsync.parallel([
+            done => sut((err: Error) => done(null, err)),
+            done => sut((err: Error) => done(null, err)),
+          ], (err: Error | null | undefined, errs: Error[]) => {
             assert.match(errs[0].message, /test\.func: specified timeout of 10ms was reached/);
             assert.match(errs[1].message, /test\.func: the circuit-breaker is open/);
             done();
@@ -79,9 +79,10 @@ describe('disyuntor', function () {
     });
 
     it('should close the circuit after success on half-open state', function (done) {
+      // FIXME lexical scope is shared between ALL protectedFunction calls.  Why?
       let error = new Error();
 
-      protectedFunction = disyuntor({
+      let protectedFunction = disyuntor({
         name: 'test.func',
         timeout: '10ms',
         maxFailures: 2,
@@ -96,19 +97,19 @@ describe('disyuntor', function () {
         return cb(null, { succeed: true });
       });
 
-      async.series([
+      otherAsync.series([
         // Open the circuit
         cb => {
           error = new Error('error-1');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
         cb => {
           error = new Error('error-2');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
         cb => {
           error = new Error('error-3');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
 
         // Wait cooldown
@@ -117,21 +118,21 @@ describe('disyuntor', function () {
         // This should move state from half open to closed
         cb => {
           error = null;
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
 
         // Fail again, this should not open the circuit because failures should
         // have reset
         cb => {
           error = new Error('error-4');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
 
         cb => {
           error = new Error('error-5');
-          protectedFunction((err, r) => cb(null, { err, r }));
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }));
         }
-      ], (err, results) => {
+      ], (err: Error, results: {err: Error, r: any}[]) => {
         assert.ifError(err);
 
         // No circuit breaker open error
@@ -148,9 +149,11 @@ describe('disyuntor', function () {
 
 
     it('should call onClose after closing in half open state', (done) => {
-      let closeEvents = [];
+      let closeEvents: any[] = [];
+      // FIXME lexical scope is shared between ALL protectedFunction calls.  Why?
+      let error = new Error;
 
-      protectedFunction = disyuntor({
+      let protectedFunction = disyuntor({
         name: 'test.func',
         timeout: '10ms',
         maxFailures: 2,
@@ -166,19 +169,19 @@ describe('disyuntor', function () {
         return cb(null, { succeed: true });
       });
 
-      async.series([
+      otherAsync.series([
         // Open the circuit
         cb => {
           error = new Error('error-1');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
         cb => {
           error = new Error('error-2');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
         cb => {
           error = new Error('error-3');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
 
         // Wait cooldown
@@ -187,14 +190,14 @@ describe('disyuntor', function () {
         // This should move state from half open to closed
         cb => {
           error = null;
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
 
         // Fail again, this should not open the circuit because failures should
         // have reset
         cb => {
           error = new Error('error-4');
-          protectedFunction((err, r) => cb(null, { err, r }))
+          protectedFunction((err: Error, r: any) => cb(null, { err, r }))
         },
       ], (err) => {
         assert.ifError(err);
@@ -207,13 +210,13 @@ describe('disyuntor', function () {
     });
 
     it('should backoff on multiple failures', function (done) {
-      async.series([
+      otherAsync.series([
         cb => sut(() => cb()),
 
         //first cooldown of 200ms
         cb => setTimeout(cb, 200),
         cb => {
-          sut(err => {
+          sut((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             assert.equal(tripCalls.length, 2);
             cb();
@@ -223,7 +226,7 @@ describe('disyuntor', function () {
         //at this point the circuit is open, and is going back to half-open after 400ms.
         cb => setTimeout(cb, 200),
         cb => {
-          sut(err => {
+          sut((err: Error) => {
             assert.match(err.message, /test\.func: the circuit-breaker is open/);
             assert.equal(tripCalls.length, 2);
             cb();
@@ -232,7 +235,7 @@ describe('disyuntor', function () {
 
         cb => setTimeout(cb, 200),
         cb => {
-          sut(err => {
+          sut((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             assert.equal(tripCalls.length, 3);
             cb();
@@ -242,7 +245,7 @@ describe('disyuntor', function () {
         //once reached the maxcooldown
         cb => setTimeout(cb, 400),
         cb => {
-          sut(err => {
+          sut((err: Error) => {
             assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
             assert.equal(tripCalls.length, 4);
             cb();
@@ -256,8 +259,8 @@ describe('disyuntor', function () {
 
 
   describe('when timeout is disabled', function () {
-    var tripCalls = [];
-    var sut;
+    let tripCalls: any[] = [];
+    let sut: Function;
 
     beforeEach(function () {
       tripCalls = [];
@@ -274,14 +277,14 @@ describe('disyuntor', function () {
     });
 
     it('should not fail with timeout', function (done) {
-      sut(err => done(err));
+      sut((err: Error) => done(err));
     });
   });
 
   describe('when the protected function fails', function () {
-    var tripCalls = [];
-    var sut;
-    var fail = false;
+    let tripCalls: any[] = [];
+    let sut: Function;
+    let fail: boolean = false;
 
     beforeEach(function () {
       tripCalls = [];
@@ -300,10 +303,10 @@ describe('disyuntor', function () {
 
     it('should change to open if it fail', function (done) {
       fail = true;
-      sut(2, err1 => {
+      sut(2, (err1: Error) => {
         assert.equal(err1.message, 'failure');
         assert.equal(tripCalls.length, 1);
-        sut(2, err2 => {
+        sut(2, (err2: Error) => {
           assert.match(err2.message, /test\.func: the circuit-breaker is open/);
           assert.equal(tripCalls[0].err, err1);
           done();
@@ -312,7 +315,7 @@ describe('disyuntor', function () {
     });
 
     it('should remain closed if it works', function (done) {
-      sut(2, (err1, result) => {
+      sut(2, (err1: Error, result: any) => {
         assert.notOk(err1);
         assert.equal(result, 2);
         done();
@@ -321,18 +324,18 @@ describe('disyuntor', function () {
 
     it('should change to closed once it works', function (done) {
       fail = true;
-      async.series([
+      otherAsync.series([
         cb => sut(2, () => cb()),
         cb => setTimeout(cb, 200),
         cb => {
           fail = false;
-          sut(2, (err, result) => {
+          sut(2, (err: Error, result: any) => {
             assert.equal(result, 2);
             cb();
           });
         },
         cb => {
-          sut(3, (err, result) => {
+          sut(3, (err: Error, result: any) => {
             assert.equal(result, 3);
             cb();
           });
@@ -342,8 +345,8 @@ describe('disyuntor', function () {
   });
 
   describe('issue with cooldown(str) and default maxCooldown', function () {
-    var sut;
-    var fail = false;
+    let sut: Function;
+    let fail: boolean = false;
 
     beforeEach(function () {
       fail = false;
@@ -360,10 +363,10 @@ describe('disyuntor', function () {
 
     it('should continue open', function (done) {
       fail = true;
-      async.series([
+      otherAsync.series([
         cb => sut(2, () => cb()),
         cb => {
-          sut(3, (err) => {
+          sut(3, (err: Error) => {
             assert.equal(err.message, 'test.func: the circuit-breaker is open');
             cb();
           });
@@ -373,8 +376,8 @@ describe('disyuntor', function () {
   });
 
   describe('reseting after cooldown', function () {
-    var sut;
-    var fail = false;
+    let sut: Function;
+    let fail: boolean = false;
 
     beforeEach(function () {
       fail = false;
@@ -392,13 +395,13 @@ describe('disyuntor', function () {
 
     it('should work', function (done) {
       fail = true;
-      async.series([
+      otherAsync.series([
         //fail twice
         cb => sut(2, () => cb()),
         cb => sut(2, () => cb()),
         //circuit is open
         cb => {
-          sut(3, (err) => {
+          sut(3, (err: Error) => {
             assert.equal(err.message, 'test.func: the circuit-breaker is open');
             cb();
           });
@@ -418,7 +421,7 @@ describe('disyuntor', function () {
         },
         //circuit should be still closed because maxFailures is 2.
         cb => {
-          sut(3, (err) => {
+          sut(3, (err: Error) => {
             assert.equal(err.message, 'failure');
             cb();
           });
@@ -483,23 +486,23 @@ describe('disyuntor', function () {
   describe('when callback has more than one result', function() {
 
     it('passes ALL of the results to the callback', (done) => {
-      const doMathOnFourNumbers = (num1, num2, num3, num4, cb) => {
-        const sum = num1 + num2 + num3 + num4;
-        const avg = sum / 4;
+      const doMathOnFourNumbers = (num1: number, num2: number, cb: (err: any, sum: number, avg: number) => void) => {
+        const sum = num1 + num2;
+        const avg = sum / 2;
         cb(null, sum, avg);
       }
 
       const protectedMathOnFourNumbers = disyuntor({ name: 'mathOnFourNumbers' }, doMathOnFourNumbers);
 
-      protectedMathOnFourNumbers(2, 3, 4, 5, (err, sum, avg) => {
-        assert.equal(sum, 14);
-        assert.equal(avg, 3.5);
+      protectedMathOnFourNumbers(10, 20, (err, sum, avg) => {
+        assert.equal(sum, 30);
+        assert.equal(avg, 15);
         done();
       });
     });
 
     it('does not incorrectly expand an array argument', (done) => {
-      const returnAnArray = (callback) => setImmediate(() => callback(null, [1, 2, 3]));
+      const returnAnArray = (callback: (arg0: any, arg1: number[]) => void) => setImmediate(() => callback(null, [1, 2, 3]));
 
       const protectedReturnAnArray = disyuntor({ name: 'returnAnArray' }, returnAnArray);
 
