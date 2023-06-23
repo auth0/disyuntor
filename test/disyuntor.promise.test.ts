@@ -67,50 +67,52 @@ describe('promise interface', function () {
     });
 
     it('should backoff on multiple failures', function (done) {
+      const sutMultiFailure = wrapPromise({
+        name: 'test.multiFailureFunc',
+        timeout: 10,
+        maxFailures: 3,
+        cooldown: 200,
+        maxCooldown: 600,
+        onTrip: (err: Error, failures: number, cooldown: number) => monitorCalls.push({err, failures, cooldown})
+      }, () => new bbPromise(() => {}));
+
+      const expectTimeout = (cb: Function) =>  sutMultiFailure().catch((err: Error) => {
+        assert.match(err.message, /test\.multiFailureFunc: specified timeout of 10ms was reached/);
+        cb();
+      })
+
+      const expectOpenCircuitBreaker = (
+      cb: Function,
+      ) => sutMultiFailure().catch((err: Error) => {
+        assert.match(err.message, /test\.multiFailureFunc: the circuit-breaker is open/);
+        cb();
+      })
+    
       otherAsync.series([
-        (cb: () => any) => sut().catch(() => cb()),
-
-        //first cooldown of 200ms
-        (cb: () => any) => setTimeout(cb, 200),
-        (cb: () => any) => {
-          sut().catch((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            cb();
-          });
-        },
-
-        //at this point the circuit is open, and is going back to half-open after 400ms.
-        (cb: () => any) => setTimeout(cb, 200),
-        (cb: () => any) => {
-          sut().catch((err: Error) => {
-            assert.match(err.message, /test\.func: the circuit-breaker is open/);
-            cb();
-          });
-        },
-
-        (cb: () => any) => setTimeout(cb, 200),
-        (cb: () => any) => {
-          sut().catch((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            cb();
-          });
-        },
-
-        //once reached the maxcooldown
-        (cb: () => any) => setTimeout(cb, 400),
-        (cb: () => any) => {
-          sut().catch((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            cb();
-          });
-        },
-
-
+        expectTimeout,
+        expectTimeout,
+        expectTimeout,
+        //circuit is open and is going back to half-open after 200ms.
+        (cb) => setTimeout(cb, 100),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100), //wait rest of cooldown duration
+        expectTimeout, //single failed call will trip it again
+        //now backoff should increase by one increment
+        (cb) => setTimeout(cb, 300),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100),
+        //one more increment
+        expectTimeout,
+        (cb) => setTimeout(cb, 500),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100),
+        //should not go over maxTimeout
+        expectTimeout,
+        (cb) => setTimeout(cb, 600),
+        expectTimeout
       ], done);
     });
   });
-
-
 
   describe('when the protected promise fails', function () {
     let monitorCalls: any[] = [];

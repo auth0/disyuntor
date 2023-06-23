@@ -18,6 +18,7 @@ export class Disyuntor extends EventEmitter {
   private config: DisyuntorConfig;
 
   failures: number = 0;
+  trips: number = 0;
   lastFailure: number = 0;
   currentCooldown: number;
 
@@ -45,6 +46,7 @@ export class Disyuntor extends EventEmitter {
 
   reset() {
     this.failures = 0;
+    this.trips = 0;
     this.lastFailure = 0;
     this.currentCooldown = this.config.thresholdConfig.minCooldownTimeMs;
   }
@@ -75,7 +77,7 @@ export class Disyuntor extends EventEmitter {
       );
     } else if (state === State.HalfOpen) {
       this.currentCooldown = Math.min(
-          this.currentCooldown * (this.failures + 1),
+          this.currentCooldown * (this.trips + 1),
           this.config.thresholdConfig.maxCooldownTimeMs
       );
     }
@@ -101,7 +103,7 @@ export class Disyuntor extends EventEmitter {
       }
 
       //If it worked we need to reset it, regardless if is half-open or closed,
-      //the failures counter is meant to accumulate failures in a row.
+      //the failures and trips counters are meant to accumately consecutively.
       this.reset();
 
       return result;
@@ -110,10 +112,12 @@ export class Disyuntor extends EventEmitter {
         this.failures++;
         this.lastFailure = Date.now();
         if (this.failures >= this.config.thresholdConfig.maxConsecutiveFailures) {
+          this.trips++;
           this.emit('trip',
             err,
             this.failures,
-            this.currentCooldown
+            this.currentCooldown,
+            this.trips
           );
         }
       }
