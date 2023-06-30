@@ -18,7 +18,6 @@ export class Disyuntor extends EventEmitter {
   private config: DisyuntorConfig;
 
   failures: number = 0;
-  trips: number = 0;
   lastFailure: number = 0;
   currentCooldown: number;
 
@@ -46,7 +45,6 @@ export class Disyuntor extends EventEmitter {
 
   reset() {
     this.failures = 0;
-    this.trips = 0;
     this.lastFailure = 0;
     this.currentCooldown = this.config.thresholdConfig.minCooldownTimeMs;
   }
@@ -76,8 +74,12 @@ export class Disyuntor extends EventEmitter {
           this.state
       );
     } else if (state === State.HalfOpen) {
+      /*
+      We add 2 because we're setting the cooldown for the case that the current call fails, and the number of trips we've observed is already equal to this.failures - this.config.thresholdConfig.maxConsecutiveFailures + 1 
+      */
+      const cooldownMultiplier = this.failures - this.config.thresholdConfig.maxConsecutiveFailures + 2;
       this.currentCooldown = Math.min(
-          this.currentCooldown * (this.trips + 1),
+          this.currentCooldown * cooldownMultiplier,
           this.config.thresholdConfig.maxCooldownTimeMs
       );
     }
@@ -103,7 +105,7 @@ export class Disyuntor extends EventEmitter {
       }
 
       //If it worked we need to reset it, regardless if is half-open or closed,
-      //the failures and trips counters are meant to accumately consecutively.
+      ///the failures counter is meant to accumulate failures in a row.
       this.reset();
 
       return result;
@@ -112,12 +114,10 @@ export class Disyuntor extends EventEmitter {
         this.failures++;
         this.lastFailure = Date.now();
         if (this.failures >= this.config.thresholdConfig.maxConsecutiveFailures) {
-          this.trips++;
           this.emit('trip',
             err,
             this.failures,
             this.currentCooldown,
-            this.trips
           );
         }
       }
