@@ -212,49 +212,56 @@ describe('disyuntor', function () {
     });
 
     it('should backoff on multiple failures', function (done) {
+      const sutMultiFailure = disyuntor({
+        name: 'test.multiFailureFunc',
+        timeout: '10ms',
+        maxFailures: 3,
+        cooldown: 200,
+        maxCooldown: 600,
+      }, function(cb) {
+        setTimeout(cb, 500)
+      });
+    
+      const expectTimeout = (cb: Function) => sutMultiFailure((err: Error) => {
+          assert.match(
+            err.message,
+            /test\.multiFailureFunc: specified timeout of 10ms was reached/
+          );
+          cb();
+        });
+
+      const expectOpenCircuitBreaker = (
+        cb: Function,
+      ) => sutMultiFailure((err: Error) => {
+          assert.match(
+            err.message,
+            /test\.multiFailureFunc: the circuit-breaker is open/
+          );
+          cb();
+        });
+      
       otherAsync.series([
-        cb => sut(() => cb()),
-
-        //first cooldown of 200ms
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(tripCalls.length, 2);
-            cb();
-          });
-        },
-
-        //at this point the circuit is open, and is going back to half-open after 400ms.
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut((err: Error) => {
-            assert.match(err.message, /test\.func: the circuit-breaker is open/);
-            assert.equal(tripCalls.length, 2);
-            cb();
-          });
-        },
-
-        cb => setTimeout(cb, 200),
-        cb => {
-          sut((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(tripCalls.length, 3);
-            cb();
-          });
-        },
-
-        //once reached the maxcooldown
-        cb => setTimeout(cb, 400),
-        cb => {
-          sut((err: Error) => {
-            assert.match(err.message, /test\.func: specified timeout of 10ms was reached/);
-            assert.equal(tripCalls.length, 4);
-            cb();
-          });
-        },
-
-
+        expectTimeout,
+        expectTimeout,
+        expectTimeout,
+        //circuit is open and is going back to half-open after 200ms.
+        (cb) => setTimeout(cb, 100),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100), //wait rest of cooldown duration
+        expectTimeout, //single failed call will trip it again
+        //now backoff should increase by one increment
+        (cb) => setTimeout(cb, 300),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100),
+        //one more increment
+        expectTimeout,
+        (cb) => setTimeout(cb, 500),
+        expectOpenCircuitBreaker,
+        (cb) => setTimeout(cb, 100),
+        //should not go over maxTimeout
+        expectTimeout,
+        (cb) => setTimeout(cb, 600),
+        expectTimeout
       ], done);
     });
   });
