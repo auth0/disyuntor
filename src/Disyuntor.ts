@@ -105,7 +105,7 @@ export class Disyuntor extends EventEmitter {
       }
 
       //If it worked we need to reset it, regardless if is half-open or closed,
-      ///the failures counter is meant to accumulate failures in a row.
+      //the failures counter is meant to accumulate failures in a row.
       this.reset();
 
       return result;
