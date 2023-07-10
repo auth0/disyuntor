@@ -117,7 +117,7 @@ export class Disyuntor extends EventEmitter {
           this.emit('trip',
             err,
             this.failures,
-            this.currentCooldown,
+            this.currentCooldown
           );
         }
       }
