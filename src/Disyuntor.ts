@@ -75,7 +75,7 @@ export class Disyuntor extends EventEmitter {
       );
     } else if (state === State.HalfOpen) {
       /*
-      We add 2 because we're setting the cooldown for the case that the current call fails, and the number of trips we've observed is already equal to this.failures - this.config.thresholdConfig.maxConsecutiveFailures + 1 
+      We add 2 because we're setting the cooldown for the case that the current call fails, and the number of trips we've observed is already equal to this.failures - this.config.thresholdConfig.maxConsecutiveFailures + 1
       */
       const cooldownMultiplier = this.failures - this.config.thresholdConfig.maxConsecutiveFailures + 2;
       this.currentCooldown = Math.min(
@@ -110,7 +110,7 @@ export class Disyuntor extends EventEmitter {
 
       return result;
     } catch(err) {
-      if (this.config.shouldTriggerAsFailure(err)) {
+      if (this.config.shouldTriggerAsFailure(err as Error)) {
         this.failures++;
         this.lastFailure = Date.now();
         if (this.failures >= this.config.thresholdConfig.maxConsecutiveFailures) {
