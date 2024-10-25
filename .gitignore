@@ -53,3 +53,5 @@ lib/*
 
 .idea/*
 .vscode/*
+
+package-lock.json
